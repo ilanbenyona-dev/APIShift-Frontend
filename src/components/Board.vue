@@ -1,197 +1,664 @@
 <template>
-  <div id="board">
-      <unit v-for="unit in boardData" :key="unit.id" :data-id="unit.id"></unit>
-    <!-- <svg id="svg">
-        <path class="path"/>
-    </svg> -->
-  </div>
-</template>
+        <div id="board" v-if="isInitialized">
+            <template v-for="(unit) in unitList"
+                :key="unit._id">
+                <type-unit class="unit" v-if="unit._type === 'Type' && renderKey >= 0"
+                    :ref="unit._id"
+                    :unit="unit"
+                    :zIndex="zIndex"
+                    @unitdragstart="zIndexUpdate"
+                    @unitdragend="unitdragend"
+                    style="width: auto; height: auto;">
+                </type-unit>
+            </template> 
+            <template v-for="(unit) in unitList"
+                :key="unit._id">
+                <enum-unit class="unit" v-if="unit._type === 'Enum' && renderKey >= 1"
+                    :ref="unit._id"
+                    :unit="unit"
+                    :zIndex="zIndex"
+                    :isBoardRendered="isRendered"
+                    @unitdragstart="zIndexUpdate"
+                    @unitdragend="unitdragend"
+                    style="width: auto; height: auto;">
+                </enum-unit>
+            </template>             
+            <template v-for="(unit) in unitList"
+                :key="unit._id">
+                <info-unit class="unit" v-if="unit._type === 'Info' && renderKey >= 2"
+                    :ref="unit._id"
+                    :unit="unit"
+                    :zIndex="zIndex"
+                    @unitdragstart="zIndexUpdate"
+                    @unitdragend="unitdragend"
+                    style="width: auto; height: auto;">
+                </info-unit>
+            </template> 
+            <template v-for="(unit) in unitList"
+                :key="unit._id">
+                <relation-unit class="unit" v-if="unit._type === 'Relation' && renderKey >= 3"
+                    :ref="unit._id"
+                    :unit="unit"
+                    :zIndex="zIndex"
+                    :isBoardRendered="isRendered"
+                    @unitdragstart="zIndexUpdate"
+                    @unitdragend="unitdragend"
+                    style="width: auto; height: auto;">
+                </relation-unit>
+            </template>
+            <template v-for="(unit) in unitList"
+                :key="unit._id">
+                <group-unit class="unit" v-if="unit._type === 'Group' && renderKey >= 5"
+                    :ref="unit._id"
+                    :unit="unit"
+                    :zIndex="zIndex"
+                    :isBoardRendered="isRendered"
+                    @unitdragstart="zIndexUpdate"
+                    @unitdragend="unitdragend"
+                    style="width: auto; height: auto;">
+                </group-unit>
+                <!-- <div :ref="unit._id" v-if="unit._type === 'Group' && renderKey >= 6">a</div> -->
+            </template> 
+            <selection-box v-if="cursor=='addGroup'" ref="selection-box"></selection-box>
+        </div>
+        <contextmenu-kit ref="contextmenu"></contextmenu-kit>
+
+        <template v-if="renderKey >= 6">
+            <line-kit v-for="line in lines" :key="line.id" :ref="line.id"
+                :src="line.src"
+                :dest="line.dest"
+                :scale="scale"
+                :options="line.options"
+                :zIndex="zIndex">
+                <!-- Line added -->
+            </line-kit>
+        </template>
+        
+        <!-- If Board rendering/Uinitilized show Loader for UX purposes -->
+        <loader-kit v-if="!isRendered"></loader-kit>
+</template> 
 
 <script>
-    import Unit from './Unit';
-    //import postscribe from 'postscribe'
+    // import Selection from "@simonwep/selection-js";
+    import { boardStore } from "../store/board";
+    import InfoUnit from './Units/Info';
+    import TypeUnit from './Units/Type';
+    import EnumUnit from './Units/Enum';
+    import RelationUnit from './Units/Relation';
+    import GroupUnit from './Units/Group';
 
-    import PlainDraggable from 'plain-draggable';
+    import Loader from './Kit/Loader';
+    import Line from './Kit/Line';
+    import ContextMenu from './Kit/ContextMenu';
+    import SelectionBox from './Kit/SelectionBox';
 
-                let getUnitbyId = function(id) {
-                    return document.querySelector('[data-id="'+id+'"]');
-                }
+    import { Relation, Enum, Type , Group } from '../assets/js/unit-classes';
+    import { Helpers } from '../assets/js/Helpers';
+
+    function getScaleMultiplier(delta) {
+      var sign = Math.sign(delta), speed = 1;
+      var deltaAdjustedSpeed = Math.min(0.25, Math.abs(speed * delta / 128));
+    //   let result = 1 - sign * deltaAdjustedSpeed;
+      return 1 - sign * deltaAdjustedSpeed;
+    }
 
     export default {
         components: {
-            Unit
+            /* Unit components  */
+            'info-unit':InfoUnit,
+            'type-unit':TypeUnit,
+            'enum-unit':EnumUnit,
+            'relation-unit':RelationUnit,
+            'group-unit': GroupUnit,
+            /* Kit components */
+            'line-kit': Line,
+            'loader-kit': Loader,
+            'contextmenu-kit': ContextMenu,
+            'selection-box': SelectionBox
         },
-        data: function() {
-            return {
-            //units: [{x: 50, y: 50}]
-                activeItem: null,
-                activeUnit: null,
-                dragActive: false,
-                boardData:[ {id: 1, type:'DS', xOffset:20, yOffset:20}],
-                paths: [{from: 1, to: 2, type: 'default'},
-                        {from: 2, to: 3, type: 'default'}]
+        data: function () {
+            return {    
+                // Functional data
+                selectedUnits: [],
+                selectionjs: null,
+                relateFrom: null,
+                relateTo:null,
+                relateType: null,
+                cursor: 'default',
+                zIndex: 1000,
+                // Vuejs data 
+                isRendered: false,
+                renderKey: 0,
+                // UI vars
+                scale: 1,
+                unitList: [],
+                lines: [],
+                panBoardBy: [0,0]
             }
         },
-        watch: {
-            //  boardData: function() {
-            //      this.render();
-            //  }
+        beforeMount: async function() {
+            await boardStore.init();
+            this.unitList = boardStore.getUnitList();
+            this.scale = boardStore.getScale();
         },
-        mounted: function() { 
-            new PlainDraggable(getUnitbyId(1));
+        mounted: async function() {
+            let self = this;
 
-            this.render();
-            // const plugin = document.createElement("script");
-            // plugin.setAttribute(
-            // "src",
-            // "../assets/plain-draggable"
-            // );
-            // plugin.async = true;
-            // document.head.appendChild(plugin);
+            /* Wait for values from data to load */
+            await this.$nextTick();
 
-            // plugin.setAttribute(
-            // "src",
-            // "../assets/leader-line"
-            // );
-            //             document.head.appendChild(plugin);
-
+            // Render Units by dependency order, from least to most. 
+            // Types -> Enums -> Infos -> Relations 
+            for (let index = 0; index < 6; index++) {
+                setTimeout(() => {
+                    self.renderKey++;
+                    if (index+1 === 6) {
+                        setTimeout(()=> {
+                            // Change units to their scale as saved in DB
+                            self.unitList.forEach((unitObj) => {
+                                let unit = self.$refs[unitObj.getUID()];
+                                console.log(unitObj);
+                                if (unit) {
+                                    unit.internalScaleTo(-1, -1, self.scale);                                    
+                                }
+                            });
+                            boardStore.setUnitList(self.unitList);
+                            boardStore.setScale(self.scale);
+                            self.renderKey++;
+                            self.isRendered = true;
+                        }, 200)
+                    }
+                }, 200 * (index+1));               
+            }
         },
         methods: {
-            render: function () {
-
-               // Render Units on screen and connections
-                // let renderUnits = function (self) {
-                //     for (const unit of self.boardData) {
-                //         // Render unit movement
-                //         let el = getUnitbyId(unit.id);
-                //         self.setTranslate(unit.xOffset, unit.yOffset, el);
-                //     }
-                // }
-                // renderUnits();
-
-                // let renderPaths = function (self) {
-                //     let ePath = document.querySelector('.path');
-                //     var eHandles = document.querySelectorAll(".handle");
-
-                //     self.paths.forEach(path => {
-                //         let from = self.boardData.find(u=>u.id===path.from);//getUnitbyId(path.from);
-                //         let to = self.boardData.find(u=>u.id===path.to);
-
-                //         let bezierWeight = 0.675;
-                //         let x1 = from.xOffset+123, y1 = from.yOffset + 63;
-                //         let x4 = to.xOffset+3, y4 = to.yOffset+63;
-                //         window.TweenLite.set((eHandles[0], { x: x1, y: y1}));
-                //         window.TweenLite.set((eHandles[1], { x: x4, y: y4}));
-
-
-                //         var dx = Math.abs(x4 - x1) * bezierWeight;
-                        
-                //         var x2 = x1 - dx;
-                //         var x3 = x4 + dx;
-  
-                    
-                //         var data = `M${x1} ${y1} C ${x2} ${y1} ${x3} ${y4} ${x4} ${y4}`;                        
-                //         ePath.setAttribute("d", data);
-                //     });
-                // }
-
-                // new PlainDraggable(getUnitbyId(1));
-               // window.LeaderLine(getUnitbyId(1), getUnitbyId(2));
-
-                // let LeaderLine = window.LeaderLine;
-                // console.log(LeaderLine);
-                // Rendering Units and Paths on screen 
-                //renderUnits(this);
-                //renderPaths(this);
-            },
-            // renderPath: function(x1,y1,x2,y2, el) {
-
-            // },
-            mousedown: function(e) {
-                const target = e.target;
-
-                if (target !== e.currentTarget) {
-                    this.dragActive = true;
-                    
-                    // This is the item we interact with 
-                    this.activeItem = target;
-
-                    console.log(this.activeItem);
-                    if (this.activeItem !== null) {
-                        // If activeItem is Unit
-                        this.activeUnit = this.boardData.find(el => el.id == this.activeItem.getAttribute('data-id'));
-                        console.log(this.activeUnit);
-                        if (this.activeUnit)
-                        if (!this.activeItem.xOffset) {
-                            this.activeItem.xOffset = this.activeUnit.xOffset;
-                        }
-                        if (!this.activeItem.yOffset) {
-                            this.activeItem.yOffset = this.activeUnit.yOffset;
-                        }
-                        console.log("doing something!");
-                        this.activeItem.initialX = e.clientX - this.activeItem.xOffset;
-                        this.activeItem.initialY = e.clientY - this.activeItem.yOffset;
-                        console.log(this.activeItem.initialX);
-                    }
-                }
-            },
-            mouseup: function () {
-                if(this.activeItem !== null) {
-                    this.activeItem.initalX = this.activeItem.currentX;
-                    this.activeItem.initalY = this.activeItem.currentY;
-                }
-                this.dragActive = false;
-                this.activeItem = null;
-            },
-            mousemove: function(e) {
-                if (this.dragActive) {
-
-                    // Set dragged element current X,Y 
-                    this.activeItem.currentX = e.clientX - this.activeItem.initialX;
-                    this.activeItem.currentY = e.clientY - this.activeItem.initialY;
+            setInteractions() {
+                var self = this;
+                /* Vars to cache event state */
+                var evCache = new Array(); 
+                let prevDistance = -1;
+                var center;
+                // var lastCenter;
+                var lastX, lastY;
+                var initialX,initialY;
+                var pressedUnit;    
                 
-                    // Set current 
-                    this.activeItem.xOffset = this.activeItem.currentX;
-                    this.activeItem.yOffset = this.activeItem.currentY;
+                function calculateDistance(point1, point2) {
+                    return Math.sqrt(Math.pow(point1.clientX - point2.clientX, 2) + Math.pow(point1.clientY - point2.clientY,2));
+                }
 
-                    if (this.activeUnit) {
-                        console.log('oidjfgiojdfgidjiodjfgidjfg');
-                        this.activeUnit.xOffset = this.activeItem.currentX;
-                        this.activeUnit.yOffset = this.activeItem.currentY;
+                /* Handle ponter down event */
+                async function pointerdown_handler(ev) {
+                    ev.preventDefault();
+
+                    var selection = window.getSelection ? window.getSelection() : document.selection ? document.selection : null;
+                    if(!selection) selection.empty ? selection.empty() : selection.removeAllRanges();
+
+                    /* Unfocus edited Unit element */
+                    let activeElement = document.activeElement.closest('.unit');
+                    if (activeElement) {
+                        self.$refs[activeElement.ref].editmode = false;
                     }
+
+                    /* Show context menu in click position */
+                    let contextElement = self.$refs['contextmenu'].$el;
+
+                    contextElement.style.transform = 'scale(0)';
+                     
+                    if (evCache.length) {
+                        if (evCache[0].isRightClick) {
+                            remove_event(evCache[0]);
+                        }   
+                    }
+
+
+                    // Cache pointer event for multi-pointer interactions
+                    evCache.push(ev);
                     
-                    this.render();
+                    /* 1 pointer interaction, cache X,Y position */
+                    if (evCache.length === 1) {
+                        lastX = evCache[0].clientX;
+                        lastY = evCache[0].clientY;
+
+                        pressedUnit = ev.target.closest(".unit");
+
+                        /* Click on Unit element  */
+                        if (pressedUnit) {
+                            if (pressedUnit.classList.contains('placeholder')) 
+                                pressedUnit = pressedUnit.parentNode.closest(".unit");
+                            let unitId = pressedUnit.ref;
+
+                            switch (self.cursor) {
+                                case 'default':
+                                    self.$refs[unitId].onDragStart();
+                                    break;
+                                case 'delete': 
+                                    self.$refs[unitId].onDelete();
+                                    break;
+                                case 'linkage':
+                                    // console.log(pressedUnit.classList);
+                                    if (pressedUnit.classList.contains('unit-info') || pressedUnit.classList.contains('unit-group') || pressedUnit.classList.contains('unit-relation')) {
+                                        self.createRelation(null,unitId, self.relateType);                                    
+                                    }
+                                    break;
+                            }                            
+                        }
+                        /* Click on Board element */ 
+                        else {
+                            switch (self.cursor) {
+                                case 'addEnum': 
+                                    var enumUnit = new Enum(ev.clientX,ev.clientY);
+                                    await self.addUnitOnRuntime(enumUnit);
+                                    self.$refs[enumUnit.getUID()].isGhost = true; 
+                                    break;
+                                case 'addType': 
+                                    var typeUnit = new Type(ev.clientX, ev.clientY);
+                                    await self.addUnitOnRuntime(typeUnit);
+                                    self.$refs[typeUnit.getUID()].isGhost = true;
+                                    break;
+                                case 'addGroup': 
+                                    initialX=ev.clientX; //+ document.body.querySelector('#board').offsetTop;
+                                    initialY=ev.clientY; //+ document.body.querySelector('#board').offsetLeft;
+                                    self.$refs['selection-box'].pointerY = initialY;
+                                    self.$refs['selection-box'].pointerX = initialX;
+                                    break;
+                            }
+                        }
+                    }
+                    /* 2 pointer interaction, cache center of pinch */
+                    if (evCache.length === 2) {
+                        let centerX = (evCache[0].clientX + evCache[1].clientX)/2;
+                        let centerY = (evCache[0].clientY + evCache[1].clientY)/2
+                        center = { x: centerX, y: centerY };
+                    }
+                }
+
+                /* Handle pointer move event  */
+                function pointermove_handler(ev) {
+                    ev.preventDefault();
+
+                    // Find this event in the cache and update its record with this event
+                    for (var i = 0; i < evCache.length; i++) {
+                        if (ev.pointerId == evCache[i].pointerId) {
+                            evCache[i] = ev;
+                            break;
+                        }
+                    }
+
+                
+                    /* Single pointer gestures - panning, Unit movement */
+                    if (evCache.length == 1 && !evCache[0].isRightClick) {
+                        if (self.cursor === 'delete' ) {
+                            return;
+                        }
+
+                        let movementX = evCache[0].clientX - lastX;
+                        let movementY = evCache[0].clientY - lastY;
+                        lastX = evCache[0].clientX;
+                        lastY = evCache[0].clientY;
+                        if (pressedUnit) {
+                            let unitId = pressedUnit.ref;
+                            self.$refs[unitId].onDrag(movementX, movementY);
+                        } /* Cursor on Board element */
+                        else {
+                            if (self.cursor === 'addGroup') {
+                                console.log(initialX, initialY);
+                                self.$refs['selection-box'].height += movementY;
+                                self.$refs['selection-box'].width += movementX;
+                            }
+                            if (self.cursor === 'default') {
+                                self.internalMoveBy(movementX, movementY);
+                            }
+                        }
+                    }
+
+                    /* Double pointer gestures (pinch, pinch W panning) */
+                    if (evCache.length == 2 && !evCache[0].isRightClick) {
+                        var curDistance = calculateDistance(evCache[0], evCache[1]);
+
+                        if (prevDistance > 0) {
+                            /* Scale according to the  */
+                            let scaleBy = curDistance/prevDistance;
+                    
+                            /* Bound scale from 1.5 to 0.2 */
+                            if (self.scale*scaleBy > 1.5 || self.scale*scaleBy < 0.2) {
+                                return false;
+                            }
+                            self.unitList.forEach((unitObj)=>{
+                                let unit = self.$refs[unitObj.getUID()];
+                                unit.internalScaleTo(center.x, center.y, scaleBy);
+                            })
+                            self.scale *= scaleBy;
+                            boardStore.setScale(self.scale);
+                        }
+                        
+                        /* TODO: Pan by the movement of center of points,
+                         - by caching center and calcualting difference */
+                        // lastCenter = {};
+
+                        // Cache the distance for the next move event 
+                        prevDistance = curDistance;
+                    }
+                }
+
+                /* Handle relesing of the pointer */
+                function pointerup_handler(ev) {
+                    ev.preventDefault();
+
+                    // Remove this pointer from the cache
+                    remove_event(ev);
+
+                    if (self.cursor !== 'default') {
+                        self.cursor = 'default';
+                        return;
+                    }
+
+                    // If the number of pointers down is less than two then reset
+                    if (evCache.length < 2) {
+                        prevDistance = -1;
+                        lastX =0; lastY=0;
+                        evCache = [];
+
+                        if (pressedUnit) {
+                            let unitId = pressedUnit.ref;
+                            self.$refs[unitId].onDragEnd();
+                        }
+                    }
+                }
+
+                // Remove pointer event from the cache
+                function remove_event(ev) {
+                    for (var i = 0; i < evCache.length; i++) {
+                        if (evCache[i].pointerId == ev.pointerId) {
+                            evCache.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
+
+                function init() {
+                    /* Install event handlers for the board */
+                    var el = document.getElementById("board");
+                    el.onpointerdown = pointerdown_handler;
+                    el.onpointermove = pointermove_handler;
+
+                    /* Po  nter has canceled */
+                    el.onpointerup = pointerup_handler;
+                    el.onpointercancel = pointerup_handler;
+                    // el.onpointerout = pointerup_handler;
+                    // el.onpointerleave = pointerup_handler;
+
+                    /* Zooming on desktop && laptop, tested on chrome and macbook */
+                    el.addEventListener('wheel' , (e) => {
+                        var delta = e.deltaY;
+                        if (e.deltaMode > 0) delta *= 100;
+
+                        var scaleBy = getScaleMultiplier(delta);
+                        /* Bound scale from 1.5 to 0.2 */
+                        if (self.scale*scaleBy > 1.5 || self.scale*scaleBy < 0.2) {
+                            return false;
+                        }
+                        /* Apply scale to Units on screen */
+                        self.unitList.forEach((unitObj)=>{
+                            let unit = self.$refs[unitObj.getUID()];
+                            unit.internalScaleTo(e.clientX, e.clientY, scaleBy);
+                        })
+                        self.scale *= scaleBy;
+                        boardStore.setScale(self.scale);
+                    });
+
+                    // TODO: Maybe move it to Info/Enum elements
+                    el.addEventListener('contextmenu', (ev)=> {
+                        ev.preventDefault();
+                        ev.isRightClick = true;
+
+                        /* Replace pointer event with contextmenu event */
+                        evCache[0] = ev;
+
+                        /* Show context menu in click position */
+                        let contextElement = self.$refs['contextmenu'];
+
+                        let pressedUnit = ev.target.closest('.unit');
+                        /* Show contextmenu only on Unit click */
+                        if (pressedUnit) {
+                            if (pressedUnit.closest('.unit-info') || pressedUnit.closest('.unit-relation')) {
+                                contextElement.$el.classList.add('relatable');
+                            } else {
+                                contextElement.$el.classList.remove('relatable');
+                            }
+                            
+                            contextElement.pressedUnit = self.$refs[pressedUnit.ref];
+                            contextElement.$el.style.top = `${ev.clientY}px`;
+                            contextElement.$el.style.left = `${ev.clientX}px`;
+                            contextElement.$el.style.transform = 'scale(0)';
+                            contextElement.$el.style.transform = 'scale(1)';
+                        }
+                    });
+
+                    /* Is G button pressed create group of selected units */
+                    window.addEventListener('keyup',(e) => {
+                        if (e.key === 'g') {
+                            let unitElements = Array.from(document.querySelectorAll('.selected'));
+                            if (unitElements.length) {
+                                let group = new Group(unitElements.map(unit=>unit.ref));
+
+                                self.addUnitOnRuntime(group);
+                            }
+                        }
+                    })
+                }
+                
+                setTimeout(init, 0);
+            },
+            async addUnitOnRuntime(newUnit) {
+                // let self = this;
+                this.unitList.push(newUnit);
+                // Wait for v-for rendering (next tick) Re-render units on screen
+                await this.$nextTick();
+                
+                this.$refs[newUnit.getUID()].internalScaleTo(-1,-1,this.scale);
+                boardStore.setUnitList(this.unitList);
+                boardStore.setScale(this.scale);
+            },
+            async deleteUnitOnRuntime(unitId) {
+                this.unitList = this.unitList.filter(u => u.getUID() !== unitId);
+                await this.$nextTick();
+                boardStore.setUnitList(this.unitList);
+                boardStore.setScale(this.scale);
+            },
+            async drawLine(src,dest, options){
+                let line = {src, dest, id: Helpers.generateUID(), options};
+                this.lines.push(line);
+                await this.$nextTick();
+
+                return line.id;
+            },  
+            async deleteLineOnRuntime(lineId) {
+                console.log(this.lines);
+                this.lines = this.lines.filter((l)=>{ 
+                    if(l.id !== lineId)
+                        return l;
+                });
+                await this.$nextTick();
+            },
+            /**
+             * Gets a Relation Unit and starts drawing procedure on screen
+             */
+            async createRelation(srcId,destId,type) {
+                if (srcId) {
+                    this.relateFrom = srcId;
+                    console.log('relation from ' + srcId);
+                }
+                if (destId) {
+                    this.relateTo = destId;
+                    console.log('relation to ' + destId);
+                }
+                if (type) {
+                    this.relateType = type;
+                    console.log('relation type is ' + type);
+                }
+                /* Destination is missing, indicate Relation linkage */
+                if (destId == null && this.cursor !== 'linkage') {
+                    this.cursor = 'linkage';   
+                }
+
+                if (this.relateFrom && this.relateTo && this.relateType) {
+                    let relation = new Relation(this.relateFrom ,this.relateTo, this.relateType);
+                    await this.addUnitOnRuntime(relation);
+
+                    /* If related items are in a group, add relation to group */
+                    let srcGroup = this.$refs[this.relateFrom].groupContainer;
+                    let destGroup = this.$refs[this.relateTo].groupContainer;
+                    if (srcGroup && srcGroup == destGroup) {
+                        srcGroup.addItem(relation.getUID());
+                        this.$refs[relation.getUID()].groupContainer = srcGroup;
+                    }
+                    this.relateFrom = null;
+                    this.relateTo = null;
+                    this.relateType = null;
                 }
             },
-            setTranslate: function(xPos, yPos, el) {
-                // el.style.top = yPos+'px';
-                // el.style.left = xPos+'px';
-                el.style.transform = 'translate3d('+xPos+'px,'+yPos+'px,0)';
+            internalMoveBy(dx,dy) {
+                let self = this;
+                self.unitList.forEach((unitObj) => {
+                    let unit = self.$refs[unitObj.getUID()];
+                    unit.moveBy(dx,dy);
+                });
+            },
+            internalScaleTo(cx,cy, scaleBy) {
+                let self = this;
+                self.scale *= scaleBy;
+                self.unitList.forEach((unitObj) => {
+                    let unit = self.$refs[unitObj.getUID()];
+                    if (unit) {
+                        unit.internalScaleTo(cx, cy, scaleBy);
+                    }
+                })
+            },
+            zIndexUpdate() {
+                this.zIndex++;
+            },
+            unitdragend() {
+                boardStore.setUnitList(this.unitList);
+                boardStore.setScale(this.scale);
+            },
+            keyup(e) {
+                console.log(e);
+            }
+        },
+        computed: {
+            isInitialized: function() {
+                return boardStore.isInitialized;
+            },
+            // unitList: function() {
+            //     // TODO: Deserilize unitList in this stage of code for SOC
+            //     let unitList =  boardStore.getState().unitList;
+            //     console.log('unitList has been modified to ', unitList);
+
+            //     // unitList as Unit objects
+            //     return boardStore.getUnitList();
+            // }
+        },
+        watch: {
+            isRendered: function() {
+                this.setInteractions();
+            },
+            cursor: function(cursor){
+                console.log(cursor);
+                if (cursor === 'linkage') {
+                    document.body.style.cursor = 'cell';
+                }
+                if (cursor === 'default') {
+                    document.body.style.cursor = 'default';
+                }
+                if (cursor === 'delete') {
+                    document.body.style.cursor = 'not-allowed';
+                }
+                if (cursor === 'addEnum' || cursor === 'addType') {
+                    document.body.style.cursor = 'copy';
+                }
+                if (cursor === 'addGroup') {
+                    document.body.style.cursor = 'crosshair';
+                }
             }
         }
     }
 </script>
 
-<style>
+<style lang="scss">
     #board {
-        position: relative;
-        width: 100vw;
-        height: 100vh;
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border: 5px solid black;
+        overflow: hidden;
+         -webkit-overflow-scrolling: touch;
     }
-    #svg {
-    width: 100%;
-    height: 100%;
-    z-index: -1;
+    /* BASE UNIT SETTINGS */
+    .unit {
+        position: absolute;
+        padding: 10px;
+        background: white;
+        border-width: 3px;
+        border-style: solid;
+        border-radius: 12px;
+        box-shadow: rgba(40, 60, 75, 0.15) 0px 3px 6px;
+        transition: box-shadow .2s ease-in-out;
+        transition: scale .2s ease-in-out;
+        transition: border-color .3s ease;  
+        transform-origin: 0% 0%;
+        z-index: 999;
+
+        &.selected {
+            border-style: dashed;
+        }
+        &:active {
+            box-shadow: rgba(40, 60, 75, 0.35) 0px 20px 60px;  
+            -webkit-transform: scale(1.2);
+            -moz-transform: scale(1.2);
+            -o-transform: scale(1.2);
+            transform: scale(1.2);
+        }
+        &.placeholder {
+            position: relative;
+            cursor: inherit;
+            -webkit-transform: none;
+            transform: none;
+
+            z-index: inherit;
+        }
+
+        br {
+            display: none;
+        }
+
+        &.isghost {
+            border-style: dashed;
+            background-color: rgba($color: white, $alpha: 0.5);
+            // border-color: rgba(176, 179, 0, 0.7); 
+        }
+    }
+    
+    [disabled="true"].single-line br {
+        display:none;
+
+    }
+    [disabled="true"].single-line * {
+        display:none;
+        white-space:nowrap;
     }
 
-    .handle {
-    fill: dodgerblue;
+    .selection {
+        background-color:rgba(66, 150, 253, .1);
+        z-index: 99999 !important;
     }
 
-    .path {
-    fill: none;
-    stroke: rgb(66, 150, 253);
-    stroke-width: 5;
+    .hidden {
+        visibility: 0;
     }
 
+    img.add {
+        background: url('../assets/logo.png');
+    }
 </style>
+

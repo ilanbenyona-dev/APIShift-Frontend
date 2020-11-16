@@ -1,8 +1,6 @@
 <template>
     <!-- Info-to-Enum dashed line -->
-        
-
-        <svg class="svg">
+        <g>
             <circle class="point" style="cursor: pointer;" r="1" />
             <path
                 :marker-start="getComputedMarkerStart"
@@ -12,8 +10,7 @@
                 :d="getComputedPath"
                 @pointerdown="onclick">
             </path>
-        </svg>
-
+        </g>
 </template>
 
 <script>
@@ -21,6 +18,9 @@ import { Constants } from '../../assets/js/Helpers';
 export default {
     mounted: function() {
         let self = this;
+
+        // let container = this.$el.nextElementSibling.getBoundingClientRect();
+
         if(!self.src || !self.dest) return;
         if (this.options.isInfoToEnum) {
             this.srcHandle = this.src.$el.querySelector('.unit-info__connector-enum');
@@ -63,18 +63,26 @@ export default {
         updateLine() {
             this.$forceUpdate();
             this.r += 0.00000000000000001;// | (this.r);
+            let point = this.$el.nextElementSibling.querySelector('.point');
+            let px = this.x4, py = this.y4;
+            point.style.transform = `translate3d(${px}px, ${py}px,0)`;
         },
         onclick(e) {
             e.preventDefault();
             e.stopPropagation();
             // this.x1 = e.clientX;
             // this.y1 = e.clientY;
-            let container = this.$el.nextElementSibling.getBoundingClientRect();
+            // let container = this.$el.nextElementSibling.getBoundingClientRect();
             let point = this.$el.nextElementSibling.querySelector('.point');
-            let px = e.clientX - container.left, py = e.clientY - container.top;
+            let px = e.clientX , py = e.clientY ;
             point.style.transform = `translate3d(${px}px, ${py}px,0)`;
             console.log(px, py, this.$el.nextElementSibling);
-            // this.destHandle = point;
+            if (this.options.isRelationToUnit) {
+                this.destHandle = point;
+            }
+            else if (this.options.isUnitToRelation) {
+                this.srcHandle = point;
+            }
         }
     },
     computed: {
@@ -340,12 +348,7 @@ export default {
     }
 
 
-    g {
-        position: absolute;
-        top: 0;
-        width: 100vh;
-        height: 100vh;
-    }
+
 
     .point {
         position: absolute;

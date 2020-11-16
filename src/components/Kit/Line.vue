@@ -1,54 +1,26 @@
 <template>
-    <svg xmlns="http://www.w3.org/2000/svg" 
-  xmlns:xlink="http://www.w3.org/1999/xlink" class="svg">
-    <defs>
-        <marker id="black-arrow" markerWidth="5" markerHeight="5" refX="0" refY="5"
-        viewBox="0 0 10 10" orient="auto-start-reverse" style="opacity: 0.85">
-            <path d="M 0 0 L 10 5 L 0 10 z" />
-        </marker>
-        <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto" markerUnits="strokeWidth">
-            <path d="M0,0 L0,6 L9,3 z" fill="rgba(255,0,0,0.9)" />
-        </marker>
-        <marker id="arrow1" viewBox="0 0 492.004 492.004" markerWidth="5" markerHeight="5" refX="285" refY="246" orient="auto-start-reverse">
-            <path d="M382.678,226.804L163.73,7.86C158.666,2.792,151.906,0,144.698,0s-13.968,2.792-19.032,7.86l-16.124,16.12
-			c-10.492,10.504-10.492,27.576,0,38.064L293.398,245.9l-184.06,184.06c-5.064,5.068-7.86,11.824-7.86,19.028
-			c0,7.212,2.796,13.968,7.86,19.04l16.124,16.116c5.068,5.068,11.824,7.86,19.032,7.86s13.968-2.792,19.032-7.86L382.678,265
-			c5.076-5.084,7.864-11.872,7.848-19.088C390.542,238.668,387.754,231.884,382.678,226.804z"/>
-        </marker>
-
-        <template >
-            <marker id="black-arrow" markerWidth="5" markerHeight="5" refX="0" refY="400"
-            viewBox="0 0 10 10" orient="auto-start-reverse" style="opacity: 0.85">
-                <path d="M 0 0 L 10 5 L 0 10 z" />
-            </marker>
-            <marker id="arrow1" viewBox="0 0 492.004 492.004" markerWidth="5" markerHeight="5" refX="285" refY="246" orient="auto-start-reverse" >
-                <path d="M382.678,226.804L163.73,7.86C158.666,2.792,151.906,0,144.698,0s-13.968,2.792-19.032,7.86l-16.124,16.12
-                c-10.492,10.504-10.492,27.576,0,38.064L293.398,245.9l-184.06,184.06c-5.064,5.068-7.86,11.824-7.86,19.028
-                c0,7.212,2.796,13.968,7.86,19.04l16.124,16.116c5.068,5.068,11.824,7.86,19.032,7.86s13.968-2.792,19.032-7.86L382.678,265
-                c5.076-5.084,7.864-11.872,7.848-19.088C390.542,238.668,387.754,231.884,382.678,226.804z"/>
-            </marker>
-        </template>
-    </defs>
-
     <!-- Info-to-Enum dashed line -->
+        
 
+        <svg class="svg">
+            <circle class="point" style="cursor: pointer;" r="1" />
+            <path
+                :marker-start="getComputedMarkerStart"
+                :marker-end="getComputedMarkerEnd"
+                :style="getComputedStyle"  
+                class="line" 
+                :d="getComputedPath"
+                @pointerdown="onclick">
+            </path>
+        </svg>
 
-        <path
-        :marker-start="getComputedMarkerStart"
-        :marker-end="getComputedMarkerEnd"
-        :style="getComputedStyle"  
-        class="line" 
-        :d="getComputedPath"></path>
-    </svg>
 </template>
 
 <script>
 import { Constants } from '../../assets/js/Helpers';
-
 export default {
     mounted: function() {
         let self = this;
-
         if(!self.src || !self.dest) return;
         if (this.options.isInfoToEnum) {
             this.srcHandle = this.src.$el.querySelector('.unit-info__connector-enum');
@@ -70,26 +42,39 @@ export default {
             this.destHandle = this.dest.$el.querySelector('.unit-info__connector-left') || this.dest.$el.querySelector('.unit-relation__connector-left') || this.dest.$el.querySelector('.unit-group__connector-left');
             this.bezierWeight = 0.7;
         }
-
-
         // TODO: It can be removed - not critical
         setInterval(() => {
             self.updateLine();
         }, 100);
-
     },
     data: function() {
         return {
             destHandle: null,
             srcHandle: null, 
             r: 0,
-            bezierWeight: 0.625
+            bezierWeight: 0.625,
+            srcX: 0,
+            srcY: 0,
+            destX: 0,
+            destY: 0
         }
     },    
     methods: {
         updateLine() {
             this.$forceUpdate();
-            this.r += 0.00000000000000001// | (this.r);
+            this.r += 0.00000000000000001;// | (this.r);
+        },
+        onclick(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // this.x1 = e.clientX;
+            // this.y1 = e.clientY;
+            let container = this.$el.nextElementSibling.getBoundingClientRect();
+            let point = this.$el.nextElementSibling.querySelector('.point');
+            let px = e.clientX - container.left, py = e.clientY - container.top;
+            point.style.transform = `translate3d(${px}px, ${py}px,0)`;
+            console.log(px, py, this.$el.nextElementSibling);
+            // this.destHandle = point;
         }
     },
     computed: {
@@ -132,6 +117,15 @@ export default {
             // let isInfoToEnum = this.options.isInfoToEnum;
             // let relationType = this.options.relationType;
             var x1=0,y1=0, c1x=0,c1y=0, c2x=0, c2y=0, x4=0,y4=0;
+
+            if (this.srcHandle === null ) {
+                x1 = this.srcX;
+                y1 = this.srcY;
+            } else if (this.destHandle === null) {
+                y4 = this.destY;
+                x4 = this.destX;
+            }
+
             /* 
             * The structure of the beziered cureved path is as follows:
             * M X1,Y1 C C1x,C1y C2x,C2y X4,Y4 
@@ -142,7 +136,6 @@ export default {
                 c2x=x1; c2y=y1;
                 x4=this.x4; y4=this.y4;
             }
-
             else if (this.options.isRelationToRelation) {
                 let py = 200*this.scale;
                 let dmy = this.options.relationType !== Constants.ONE_TO_ONE ? 25*this.scale : 10*this.scale;
@@ -195,10 +188,10 @@ export default {
                 }
                     
             }
-
             if (!(x1&&y1&&c1x&&c1y&&c2x&&c2y&&c2y&&x4&&y4)) {
                 console.log(`M ${x1} ${y1} C ${c1x} ${c1y} ${c2x} ${c2y} ${c2y} ${x4} ${y4}`);
             }
+
             return `M ${x1} ${y1} C ${c1x} ${c1y} ${c2x} ${c2y} ${x4} ${y4}`
         },
         getComputedMarkerStart() {
@@ -245,7 +238,6 @@ export default {
             }
             let rect = this.srcHandle.getBoundingClientRect();
             return rect.left + rect.width/2 + this.r;  
-
         },
         y4: function() {
             if (!(this.destHandle && this.srcHandle)) {
@@ -304,16 +296,16 @@ export default {
         },
     },
     watch: {
-        x1: function(x1) {
-            if (x1 === -1) {
-                this.$parent.deleteLineOnRuntime(this.line.id);
-            }
-        },
-        x2: function(y1) {
-            if (y1 === -1) {
-                this.$parent.deleteLineOnRuntime(this.line.id);
-            }
-        }
+        // x1: function(x1) {
+        //     if (x1 === -1) {
+        //         this.$parent.deleteLineOnRuntime(this.line.id);
+        //     }
+        // },
+        // x2: function(y1) {
+        //     if (y1 === -1) {
+        //         this.$parent.deleteLineOnRuntime(this.line.id);
+        //     }
+        // }
     },
     props: {
         src: {
@@ -335,18 +327,27 @@ export default {
 }
 </script>
 
-<style scoped>
-    .svg {
-    position: fixed;
-    display: block;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
+<style lang="scss" scoped>
+    .line {
+        &:hover {
+            cursor: pointer;
+        }
+    }
+    #black-arrow {
+        &:hover {
+            cursor: pointer;
+        }
     }
 
-    .line {
-    fill: none;
-    stroke: dodgerblue;
-    stroke-width: 6;
+
+    g {
+        position: absolute;
+        top: 0;
+        width: 100vh;
+        height: 100vh;
+    }
+
+    .point {
+        position: absolute;
     }
 </style>

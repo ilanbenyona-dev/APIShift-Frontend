@@ -2,14 +2,13 @@
 import { Helpers } from "./Helpers";
 
 class Unit {
-    constructor(x, y, text, objectStr) {
-        if (objectStr) {
-            let obj = objectStr;
-            this._id = obj._id;
-            this._xpos = obj._xpos;
-            this._ypos = obj._ypos;
-            this._text = obj._text;
-            this._type = obj._type;
+    constructor(x, y, text, obj) {
+        if (obj) {
+            for (var fld in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj, fld)) {
+                    this[fld] = obj[fld];
+                }
+            }
             return;
         }
         this._id = Helpers.generateUID();
@@ -17,25 +16,6 @@ class Unit {
         this._ypos = parseInt(y, 10);
         this._text = text;
         this._type = null;
-    }
-
-    // Gets other Unit object and draws LeaderLine to it
-    drawLineTo(unit, options) {
-        let LeaderLine = window.LeaderLine;
-        let start = this.getRenderedElement();
-        let end = unit.getRenderedElement();
-
-        let line = new LeaderLine(
-            start,
-            end,
-            options
-        );
-        // document.querySelector('#board').appendChild('.leader-line:last-of-type')
-        this._lineElements.push(document.querySelector('.leader-line:last-of-type'));
-
-        // Add the LeaderLine object to source & target 
-        unit.pushLine(line);
-        this.pushLine(line);
     }
 
     xpos() {

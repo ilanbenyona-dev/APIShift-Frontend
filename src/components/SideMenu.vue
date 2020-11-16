@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import { Type, Relation, } from "../assets/js/unit-classes";
+import { Relation, } from "../assets/js/unit-classes";
 import { Constants } from "../assets/js/Helpers";
 
 export default {
@@ -34,7 +34,7 @@ export default {
             // document.body.clientWidth;
             // const height = window.innerHeight|| document.documentElement.clientHeight|| 
             // document.body.clientHeight;
-           
+
             // let offsetTop = (height/(2) - this.$parent.$refs.board.$el.getBoundingClientRect().top);
             // let offsetLeft = (width/(2) - this.$parent.$refs.board.$el.getBoundingClientRect().left);
             // let scale = this.$parent.$refs.board.getScale();

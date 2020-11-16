@@ -59,20 +59,37 @@
                 </group-unit>
                 <!-- <div :ref="unit._id" v-if="unit._type === 'Group' && renderKey >= 6">a</div> -->
             </template> 
+            <template v-if="renderKey >= 6">
+                <svg xlmns="http://www.w3.org/2000/svg" class="svg">
+                    <defs>
+                        <marker id="black-arrow" markerWidth="5" markerHeight="5" refX="0" refY="5"
+                        viewBox="0 0 10 10" orient="auto-start-reverse" style="opacity: 0.85">
+                            <path d="M 0 0 L 10 5 L 0 10 z" />
+                        </marker>
+                        <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto" markerUnits="strokeWidth">
+                            <path d="M0,0 L0,6 L9,3 z" fill="rgba(255,0,0,0.9)" />
+                        </marker>
+                        <marker id="arrow1" viewBox="0 0 492.004 492.004" markerWidth="5" markerHeight="5" refX="285" refY="246" orient="auto-start-reverse">
+                            <path d="M382.678,226.804L163.73,7.86C158.666,2.792,151.906,0,144.698,0s-13.968,2.792-19.032,7.86l-16.124,16.12
+                            c-10.492,10.504-10.492,27.576,0,38.064L293.398,245.9l-184.06,184.06c-5.064,5.068-7.86,11.824-7.86,19.028
+                            c0,7.212,2.796,13.968,7.86,19.04l16.124,16.116c5.068,5.068,11.824,7.86,19.032,7.86s13.968-2.792,19.032-7.86L382.678,265
+                            c5.076-5.084,7.864-11.872,7.848-19.088C390.542,238.668,387.754,231.884,382.678,226.804z"/>
+                        </marker>
+
+                    </defs>
+                    <line-kit v-for="line in lines" :key="line.id" :ref="line.id"
+                        :src="line.src"
+                        :dest="line.dest"
+                        :scale="scale"
+                        :options="line.options"
+                        :zIndex="zIndex">
+                        <!-- Line added -->
+                    </line-kit>
+                </svg>
+            </template>
             <selection-box v-if="cursor=='addGroup'" ref="selection-box"></selection-box>
         </div>
         <contextmenu-kit ref="contextmenu"></contextmenu-kit>
-
-        <template v-if="renderKey >= 6">
-            <line-kit v-for="line in lines" :key="line.id" :ref="line.id"
-                :src="line.src"
-                :dest="line.dest"
-                :scale="scale"
-                :options="line.options"
-                :zIndex="zIndex">
-                <!-- Line added -->
-            </line-kit>
-        </template>
         
         <!-- If Board rendering/Uinitilized show Loader for UX purposes -->
         <loader-kit v-if="!isRendered"></loader-kit>
@@ -93,7 +110,6 @@
     import SelectionBox from './Kit/SelectionBox';
 
     import { Relation, Enum, Type , Group } from '../assets/js/unit-classes';
-    import { Helpers } from '../assets/js/Helpers';
 
     function getScaleMultiplier(delta) {
       var sign = Math.sign(delta), speed = 1;
@@ -191,6 +207,7 @@
                 async function pointerdown_handler(ev) {
                     ev.preventDefault();
 
+                    console.log(ev);
                     var selection = window.getSelection ? window.getSelection() : document.selection ? document.selection : null;
                     if(!selection) selection.empty ? selection.empty() : selection.removeAllRanges();
 
@@ -466,12 +483,29 @@
                 boardStore.setUnitList(this.unitList);
                 boardStore.setScale(this.scale);
             },
+            /**
+             * 
+             */
             async drawLine(src,dest, options){
-                let line = {src, dest, id: Helpers.generateUID(), options};
-                this.lines.push(line);
+                // TODO: Use is as js Set instead of js Array
+                /* Ordering the Id's and producing the same uid for any combinations of order */
+                let uid = '';
+                if (src.unit.getUID() > dest.unit.getUID()) {
+                    uid += dest.unit.getUID();
+                    uid += src.unit.getUID();
+                } else {
+                    uid += src.unit.getUID();
+                    uid += dest.unit.getUID();
+                }
+                /* Every line is uniquely identified by uid  */
+                const isLineExists = this.lines.find((line) => line.id === uid);
+                if (!isLineExists) {
+                    this.lines.push({src, dest, id: uid, options});
+                }
                 await this.$nextTick();
 
-                return line.id;
+                console.log(this.lines);
+                return uid;
             },  
             async deleteLineOnRuntime(lineId) {
                 console.log(this.lines);
@@ -590,9 +624,16 @@
         position: absolute;
         width: 100%;
         height: 100%;
-        border: 5px solid black;
+        // border: 5px solid black;
         overflow: hidden;
-         -webkit-overflow-scrolling: touch;
+        -webkit-overflow-scrolling: touch;
+    }
+    .svg {
+        position: fixed;
+        display: block;
+        width: 100%;
+        height: 100%;
+        z-index: 500;
     }
     /* BASE UNIT SETTINGS */
     .unit {

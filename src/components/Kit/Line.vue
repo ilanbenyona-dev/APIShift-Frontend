@@ -80,7 +80,9 @@ export default {
             if (this.options.isRelationToUnit) {
                 this.destHandle = point;
             }
-            else if (this.options.isUnitToRelation) {
+            else if (this.options.isUnitToRelation
+            
+            ) {
                 this.srcHandle = point;
             }
         }

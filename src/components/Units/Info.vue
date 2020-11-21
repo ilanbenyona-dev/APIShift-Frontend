@@ -8,9 +8,11 @@
             </div>  
             <div class="unit-info__header__type">I</div>
         </div>
-        <div class="unit-info__connector-left"></div>
-        <div class="unit-info__connector-right"></div>
-        <div class="unit-info__connector-enum"></div>
+        <div class="connector">
+            <div class="connector-left"></div>
+            <div class="connector-right"></div>
+            <div class="connector-enum"></div>
+        </div>
     </div>
 </template>
 
@@ -95,14 +97,15 @@ export default {
             this.unit.setEnumId(enumId);
         },
         async drawLineToEnum(enumId) {
-            // /* Target enum element and line options */
-            let enumUnit = this.$parent.$refs[enumId];
-            let line = await this.$parent.drawLine(this, enumUnit, { isInfoToEnum: true });
+            // console.log(enumId);
+            // // /* Target enum element and line options */
+            // let enumUnit = this.$parent.$refs[enumId];
+            await this.$parent.addLineOnRuntime(this.unit.getUID(), enumId, { isInfoToEnum: true });
 
-            console.log(line);
-            /* update coponents lines */
-            this.pushLine(line);
-            enumUnit.pushLine(line);
+            // console.log(line);
+            // /* update coponents lines */
+            // this.pushLine(line);
+            // enumUnit.pushLine(line);
         },
         removeLineToEnum() {
             this.setEnumId(null)
@@ -153,7 +156,8 @@ export default {
             }
         }
 
-        &__connector {
+        .connector {
+            // position: absolute;
             &-enum {
                 position: absolute;
                 top: 50%;

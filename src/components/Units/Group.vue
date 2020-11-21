@@ -7,8 +7,10 @@
             <div class="unit-group__header__type">G</div>
         </div>
         <div class="unit-group__items" :style="computedSize"></div>
-        <div class="unit-group__connector-left"></div>
-        <div class="unit-group__connector-right"></div>
+        <div class="connector">
+            <div class="connector-left"></div>
+            <div class="connector-right"></div>
+        </div>
     </div>
 </template>
 

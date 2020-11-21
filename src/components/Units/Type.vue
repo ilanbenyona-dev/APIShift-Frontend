@@ -24,7 +24,7 @@ export default {
 
         /* Positon element lines */
         this.updateLines();
-
+        
         /* Set edit functionality */
         this.handleEditLogic();
     },
@@ -86,6 +86,7 @@ export default {
                     return;
                 }
             }
+            
 
             this.$el.dispatchEvent(new Event('unitdragend'));
         },

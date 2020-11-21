@@ -3,15 +3,24 @@
 export default {
     mounted: function() {
         let self = this;
-        console.log();
+        console.log(this.$el);
         /* Every unit element has a ref attribute in the DOM as a unique id */
         this.$el.ref = this.unit.getUID();
         this.text = this.unit.getText();
 
-        this.$el.querySelector('.input').addEventListener('blur', () => {
-            self.isGhost = false;
-        });
-
+        const isEditableUnit =  {
+            "Type": true,
+            "Enum": true,
+            "Group": true,
+            "Relation": true,
+            "Info": true
+        }[this.unit.getType()];
+        if (isEditableUnit ) {
+            this.$el.querySelector('.input').addEventListener('blur', () => {
+                self.isGhost = false;
+            });
+        }
+        this.isEditableUnit =  isEditableUnit;
     },
     methods: {
         /* Move unit */
@@ -29,12 +38,18 @@ export default {
             this.updateLines();
         },
         handleEditLogic: function (){
+            if (!this.isEditableUnit) {
+                return; 
+            }
             this.text = this.unit.getText();
             if(!this.text) {
                 this.editmode = true;
             }
         },
         keydown(e) {
+            if (!this.isEditableUnit) {
+                return; 
+            }
             e.stopPropagation();
             const isControlKey = {
                 "ArrowLeft"  : true,
@@ -94,6 +109,7 @@ export default {
             scale: 1,
             lines: [],
             groupContainer: null,
+            isEditableUnit: false,
             // Plain component data
             text: '',
             editmode: false,
@@ -127,6 +143,9 @@ export default {
             this.updateLines();
         },
         editmode: function(mode) {
+            if (!this.isEditableUnit) {
+                return; 
+            }
             if(mode) {
                 /* Focus editable div */
                 let input = this.$el.querySelector('.input');

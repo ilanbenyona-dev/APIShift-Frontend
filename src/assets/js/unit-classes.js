@@ -66,14 +66,25 @@ class Relation extends Unit {
         this._src = src;
         this._dest = dest;
         this._relationType = relationType; // 1->1, 1->N, N->N
+        this._text = text;
         this._type = 'Relation';
     }
+
+    // getSuper() {
+    //     return super();
+    // }
 
     getSrcId() {
         return this._src;
     }
+    setSrcId(srcId) {
+        this._src = srcId;
+    }
     getDestId() {
         return this._dest;
+    }
+    setDestId(destId) {
+        this._dest = destId;
     }
     getRelationType() {
         return this._relationType;
@@ -82,6 +93,15 @@ class Relation extends Unit {
         return this._type;
     }
  }
+
+class Point extends Unit {
+    constructor( x, y, prevType, objectStr) {
+        super( x, y, null, objectStr);
+        this._type = "Point";
+        this._prevType = null;
+    }
+    // _prevType = null;
+}
 
 class Info extends Unit {
     constructor( x, y, text, objectStr) {
@@ -202,8 +222,11 @@ class UnitSerializer {
         if (unit._type === "Group") {
             return new Group(0,0,unit);
         }
+        if (unit._type === "Point") {
+            return new Point(0,0, 0, unit);
+        }
         return null;
     }
 }
 
-export { Unit, Info, Type, Enum, Relation, Group, UnitSerializer };
+export { Unit, Info, Type, Enum, Relation, Point, Group, UnitSerializer };

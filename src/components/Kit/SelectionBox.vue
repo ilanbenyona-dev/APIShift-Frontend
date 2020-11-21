@@ -11,7 +11,9 @@ export default {
     mounted: function() {
         let self = this;
         let board = document.querySelector('#board');
-        this.itemElements = [...board.querySelectorAll('.unit-info'), ...board.querySelectorAll('.unit-relation')]; 
+        this.itemElements = [...board.querySelectorAll('.unit-info'),
+                             ...board.querySelectorAll('.unit-relation'),
+                             ...board.querySelectorAll('unit-point')]; 
         this.itemElements = this.itemElements.filter((item) => {
             if (self.$parent.$refs[item.ref].groupContainer === null) {
                 return item;

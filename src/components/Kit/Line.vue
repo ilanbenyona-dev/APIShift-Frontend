@@ -1,45 +1,47 @@
-<template>
+<template class="line">
     <!-- Info-to-Enum dashed line -->
         <g>
-            <circle class="point" style="cursor: pointer;" r="1" />
+            <circle class="point" :cx="cx" :cy="cy" :r="getComputedRadius"/>
             <path
                 :marker-start="getComputedMarkerStart"
                 :marker-end="getComputedMarkerEnd"
                 :style="getComputedStyle"  
-                class="line" 
                 :d="getComputedPath"
-                @pointerdown="onclick">
+                >
             </path>
         </g>
 </template>
 
 <script>
 import { Constants } from '../../assets/js/Helpers';
+
 export default {
     mounted: function() {
         let self = this;
-
+        this.$el.ref = this.id;
+        this.$el.nextElementSibling.querySelector('path').ref = this.id;
+        this.left = this.x4; this.top = this.y4;
         // let container = this.$el.nextElementSibling.getBoundingClientRect();
 
         if(!self.src || !self.dest) return;
         if (this.options.isInfoToEnum) {
-            this.srcHandle = this.src.$el.querySelector('.unit-info__connector-enum');
+            this.srcHandle = this.src.$el.querySelector('.connector-enum');
             this.destHandle = this.dest.$el;
             this.bezierWeight = 0;
         }
         else if (this.options.isRelationToRelation) {
-            this.srcHandle = this.src.$el.querySelector('.unit-relation__connector-bottom');
-            this.destHandle = this.dest.$el.querySelector('.unit-relation__connector-top');
+            this.srcHandle = this.src.$el.querySelector('.connector-bottom');
+            this.destHandle = this.dest.$el.querySelector('.connector-top');
             this.bezierWeight = 0.7;
         }
         else if (this.options.isUnitToRelation) {
-            this.srcHandle = this.src.$el.querySelector('.unit-info__connector-right') || this.src.$el.querySelector('.unit-relation__connector-right') || this.src.$el.querySelector('.unit-group__connector-right');
-            this.destHandle = this.dest.$el.querySelector('.unit-relation__connector-left');
+            this.srcHandle = this.src.$el.querySelector('.connector-right');
+            this.destHandle = this.dest.$el.querySelector('.connector-left');
             this.bezierWeight = 0.7;
         }
         else if (this.options.isRelationToUnit) {
-            this.srcHandle = this.src.$el.querySelector('.unit-relation__connector-right');
-            this.destHandle = this.dest.$el.querySelector('.unit-info__connector-left') || this.dest.$el.querySelector('.unit-relation__connector-left') || this.dest.$el.querySelector('.unit-group__connector-left');
+            this.srcHandle = this.src.$el.querySelector('.connector-right');
+            this.destHandle = this.dest.$el.querySelector('.connector-left') ;
             this.bezierWeight = 0.7;
         }
         // TODO: It can be removed - not critical
@@ -53,38 +55,74 @@ export default {
             srcHandle: null, 
             r: 0,
             bezierWeight: 0.625,
-            srcX: 0,
-            srcY: 0,
-            destX: 0,
-            destY: 0
+            cx: 0,
+            cy: 0
         }
     },    
     methods: {
+        /* Move unit */
+        moveBy: function(dx,dy) { 
+            this.left += dx;
+            this.top += dy;
+        },
+        internalScaleTo: function(cx, cy, scaleBy) {
+            if (cx != -1 && cy != -1) {
+                this.left = (this.left * scaleBy + (cx) * (1-scaleBy));
+                this.top = (this.top * scaleBy + (cy) * (1-scaleBy));   
+            }
+        },
         updateLine() {
             this.$forceUpdate();
             this.r += 0.00000000000000001;// | (this.r);
-            let point = this.$el.nextElementSibling.querySelector('.point');
-            let px = this.x4, py = this.y4;
-            point.style.transform = `translate3d(${px}px, ${py}px,0)`;
+            // let point = this.$el.nextElementSibling.querySelector('.point');
+            // let px = this.x4, py = this.y4;
+            // point.style.transform = `translate3d(${px}px, ${py}px,0)`;
         },
-        onclick(e) {
+        // changeSrc(newSrc) {
+        //     this.src = newSrc;
+        // },
+        // changeDest(newDest) {
+        //     this.dest = newDest;
+        // },
+        onpointerdown(e) {
             e.preventDefault();
             e.stopPropagation();
-            // this.x1 = e.clientX;
-            // this.y1 = e.clientY;
-            // let container = this.$el.nextElementSibling.getBoundingClientRect();
+
             let point = this.$el.nextElementSibling.querySelector('.point');
-            let px = e.clientX , py = e.clientY ;
-            point.style.transform = `translate3d(${px}px, ${py}px,0)`;
-            console.log(px, py, this.$el.nextElementSibling);
+            this.cx = e.clientX; this.cy = e.clientY;
+
             if (this.options.isRelationToUnit) {
                 this.destHandle = point;
             }
-            else if (this.options.isUnitToRelation
-            
-            ) {
+            else if (this.options.isUnitToRelation) {
                 this.srcHandle = point;
             }
+
+            setTimeout(() => {
+                this.updateLine();
+            }, 0);
+        },
+        onpointermove(e) {
+            this.cx = e.clientX; this.cy = e.clientY;
+
+            // this.updateLine();
+        },
+        onpointerup(e) {
+        //     let point = this.$el.nextElementSibling.querySelector('.point');
+        //     /* If pointer released over Item element establish connection */
+        //     let itemElements = document.querySelectorAll('.unit-info') || document.querySelectorAll('.unit-relation');
+        //     let i = enumElements.length;
+        //     while (--i > -1) {
+        //         if (Helpers.hitTest(this.$el, enumElements[i], .99)) {
+        //             enumElements[i].classList.add('highlight');
+        //             return;
+        //         }
+        //         else {
+        //             enumElements[i].classList.remove('highlight');
+        //         }
+        //     }
+        // }
+            console.log(e);
         }
     },
     computed: {
@@ -128,13 +166,13 @@ export default {
             // let relationType = this.options.relationType;
             var x1=0,y1=0, c1x=0,c1y=0, c2x=0, c2y=0, x4=0,y4=0;
 
-            if (this.srcHandle === null ) {
-                x1 = this.srcX;
-                y1 = this.srcY;
-            } else if (this.destHandle === null) {
-                y4 = this.destY;
-                x4 = this.destX;
-            }
+            // if (this.srcHandle === null ) {
+            //     x1 = this.srcX;
+            //     y1 = this.srcY;
+            // } else if (this.destHandle === null) {
+            //     y4 = this.destY;
+            //     x4 = this.destX;
+            // }
 
             /* 
             * The structure of the beziered cureved path is as follows:
@@ -160,7 +198,13 @@ export default {
                     x4 = this.x4;
                     y4 = this.y4;
                     if (this.options.relationType === Constants.MANY_TO_MANY ) {
-                        y4 += dmy;
+                        y4 += dmy - 10*this.scale;
+                    }
+                    if (this.options.relationType === Constants.ONE_TO_MANY) {
+                        y4 -= dmy - 15*this.scale;
+                    }
+                    if (this.options.relationType === Constants.ONE_TO_ONE) {
+                        y4 -= dmy;
                     }
                 }
                 else if (this.options.isRelationToUnit) {
@@ -180,7 +224,7 @@ export default {
                 let dmx = this.options.relationType !== Constants.ONE_TO_ONE ? 25*this.scale : 10*this.scale;
                 x1 = this.x1;
                 y1 = this.y1;
-                c1x = this.x1 - this.dx -dmx;
+                c1x = this.x1 - this.dx - dmx;
                 c1y = this.y1;
                 c2x = this.x4 + this.dx
                 c2y = this.y4;
@@ -189,11 +233,15 @@ export default {
                 if (this.options.isRelationToUnit) {
                     x1 -= dmx;
                     c1x -= dmx;
+                    c2x += dmx;
+                    // x4 += 5 * this.scale;
                 }
                 if (this.options.isUnitToRelation) {
                     if (this.options.relationType === Constants.MANY_TO_MANY) {
-                        x4 += dmx;
-                        c2x += dmx;
+                    x1 -= 5 * this.scale;
+                    c1x -= dmx - this.scale*15;
+                    c2x += dmx + 15*this.scale;
+                    x4 += dmx;//5 * this.scale;
                     }
                 }
                     
@@ -205,28 +253,27 @@ export default {
             return `M ${x1} ${y1} C ${c1x} ${c1y} ${c2x} ${c2y} ${x4} ${y4}`
         },
         getComputedMarkerStart() {
-            if (this.options.relationType === Constants.ONE_TO_ONE && this.options.isRelationToUnit) {
+            let options = {...this.options};
+            if (options.relationType === Constants.ONE_TO_ONE && options.isRelationToUnit) {
                 return 'url(#arrow1)'
             }
-            if (this.options.relationType === Constants.MANY_TO_MANY) {
+            if (options.relationType === Constants.MANY_TO_MANY && options.isRelationToUnit) {
                 return 'url(#black-arrow)'
             }
-            if (this.options.relationType === Constants.ONE_TO_MANY) {
+            if (options.relationType === Constants.ONE_TO_MANY && options.isRelationToUnit) {
                 return 'url(#black-arrow)'
             }
             return undefined;
         },
         getComputedMarkerEnd() {
-            // if (this.options.relationType === Constants.ONE_TO_ONE) {
-            //     return 'url(#arrow1)'
-            // }
-            if (this.options.relationType === Constants.MANY_TO_MANY) {
-                return 'url(#black-arrow)'
-            }
-            if (this.options.relationType === Constants.ONE_TO_MANY) {
+            let options = {...this.options};
+            if (options.relationType === Constants.MANY_TO_MANY && options.isUnitToRelation) {
                 return 'url(#black-arrow)'
             }
             return undefined;
+        },
+        getComputedRadius() {
+            return 10*this.scale;
         },
         x1: function() {
             if (!(this.destHandle && this.srcHandle)) {
@@ -271,7 +318,8 @@ export default {
             
             
             return {
-                ...common
+                ...common, 
+                transform: `translate3d(${this.left}px,${this.top}px, 0) scale(${this.scale})`,
             }
         },
         infoToEnum() {
@@ -319,10 +367,15 @@ export default {
     },
     props: {
         src: {
+            /* Vue instance */
             type: Object
         },
         dest: {
+            /* Vue instance */
             type: Object
+        },
+        id: {
+            type: String
         },
         scale: {
             type: Number
@@ -338,7 +391,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-    .line {
+    path {
         &:hover {
             cursor: pointer;
         }
@@ -354,5 +407,6 @@ export default {
 
     .point {
         position: absolute;
+        opacity: 0.5;
     }
 </style>

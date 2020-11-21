@@ -6,6 +6,7 @@ class BoardStore extends PersistentStore {
     data() {
         return {
             unitList: [new Info(100,100, "lol"), new Enum(200,200, "lol"),new Type(400,100, "lol") ,new Info(100, 500, "lol")],
+            lineList: [],
             scale: 1
         }
     }
@@ -22,6 +23,9 @@ class BoardStore extends PersistentStore {
         }
         return unitList;
     }
+    getLineList() {
+        return this.state.lineList;
+    }
 
     getScale() {
         return this.state.scale;
@@ -34,6 +38,12 @@ class BoardStore extends PersistentStore {
     }
     addUnit(unit) {
         this.state.unitList.push(unit);
+    }
+    setLineList(lineList) {
+        this.state.lineList = lineList;
+    }
+    addLine(line) {
+        this.state.lineList.push(line);
     }
     getPanData() {
         let x = this.state.panLeft;

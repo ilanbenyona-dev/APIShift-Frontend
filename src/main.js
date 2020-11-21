@@ -11,9 +11,6 @@ import App from './App.vue'
 createApp(App).mount('#app');
 
 
-
-
-
 // const store = createStore({
 //     state () {
 //       return {

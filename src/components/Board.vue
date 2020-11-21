@@ -6,7 +6,7 @@
                     :ref="unit._id"
                     :unit="unit"
                     :zIndex="zIndex"
-                    @unitdragstart="zIndexUpdate"
+                    v-on:unitdragstart="zIndexUpdate"
                     @unitdragend="unitdragend"
                     style="width: auto; height: auto;">
                 </type-unit>
@@ -78,15 +78,31 @@
 
                     </defs>
                     <line-kit v-for="line in lines" :key="line.id" :ref="line.id"
+                        class="line"
                         :src="line.src"
                         :dest="line.dest"
+                        :id="line.id"
                         :scale="scale"
                         :options="line.options"
                         :zIndex="zIndex">
                         <!-- Line added -->
                     </line-kit>
                 </svg>
+
             </template>
+            <template v-for="(unit) in unitList"
+                :key="unit._id">
+                <point-unit class="unit" v-if="unit._type === 'Point' && renderKey >= 5"
+                    :ref="unit._id"
+                    :unit="unit"
+                    :zIndex="zIndex"
+                    @unitdragstart="zIndexUpdate"
+                    @unitdragend="unitdragend"
+                    style="width: auto; height: auto;">
+                </point-unit>
+                <!-- <div :ref="unit._id" v-if="unit._type === 'Group' && renderKey >= 6">a</div> -->
+            </template> 
+            <div id="control-point"></div>
             <selection-box v-if="cursor=='addGroup'" ref="selection-box"></selection-box>
         </div>
         <contextmenu-kit ref="contextmenu"></contextmenu-kit>
@@ -103,13 +119,14 @@
     import EnumUnit from './Units/Enum';
     import RelationUnit from './Units/Relation';
     import GroupUnit from './Units/Group';
+    import PointUnit from './Units/Point';
 
     import Loader from './Kit/Loader';
     import Line from './Kit/Line';
     import ContextMenu from './Kit/ContextMenu';
     import SelectionBox from './Kit/SelectionBox';
 
-    import { Relation, Enum, Type , Group } from '../assets/js/unit-classes';
+    import { Relation, Enum, Type , Group, Point} from '../assets/js/unit-classes';
 
     function getScaleMultiplier(delta) {
       var sign = Math.sign(delta), speed = 1;
@@ -125,6 +142,7 @@
             'type-unit':TypeUnit,
             'enum-unit':EnumUnit,
             'relation-unit':RelationUnit,
+            'point-unit': PointUnit,
             'group-unit': GroupUnit,
             /* Kit components */
             'line-kit': Line,
@@ -138,7 +156,7 @@
                 selectedUnits: [],
                 selectionjs: null,
                 relateFrom: null,
-                relateTo:null,
+                relateTo: null,
                 relateType: null,
                 cursor: 'default',
                 zIndex: 1000,
@@ -173,7 +191,6 @@
                             // Change units to their scale as saved in DB
                             self.unitList.forEach((unitObj) => {
                                 let unit = self.$refs[unitObj.getUID()];
-                                console.log(unitObj);
                                 if (unit) {
                                     unit.internalScaleTo(-1, -1, self.scale);                                    
                                 }
@@ -197,7 +214,7 @@
                 // var lastCenter;
                 var lastX, lastY;
                 var initialX,initialY;
-                var pressedUnit;    
+                var pressedUnit, pressedLine, pressedConnector, pressedBoard;    
                 
                 function calculateDistance(point1, point2) {
                     return Math.sqrt(Math.pow(point1.clientX - point2.clientX, 2) + Math.pow(point1.clientY - point2.clientY,2));
@@ -237,10 +254,25 @@
                         lastX = evCache[0].clientX;
                         lastY = evCache[0].clientY;
 
+                        /* Figure unit,line,connector,board values from the pressed element */
                         pressedUnit = ev.target.closest(".unit");
+                        if (pressedUnit && pressedUnit.classList.contains('placeholder')) 
+                            pressedUnit = pressedUnit.parentNode.closest(".unit");
+                        pressedLine = ev.target.closest('.line');
+                        pressedConnector = ev.target.closest('.connector');
+                        pressedBoard = ev.target.closest('#board');
 
+                        if (pressedConnector) {
+                                // let isLeft = ev.target.closest('.connector-left');
+                                // let isTop = ev.target.closest('.connector-top');
+                                // let isRight = ev.target.closest('.connector-right');
+                                // let isBottom = ev.target.closest('.connector-bottom');
+
+                                
+                                console.log(pressedConnector);
+                        }
                         /* Click on Unit element  */
-                        if (pressedUnit) {
+                        else if (pressedUnit) {
                             if (pressedUnit.classList.contains('placeholder')) 
                                 pressedUnit = pressedUnit.parentNode.closest(".unit");
                             let unitId = pressedUnit.ref;
@@ -259,6 +291,39 @@
                                     }
                                     break;
                             }                            
+                        } else if (pressedLine) {
+                            pressedLine = pressedLine.querySelector('path');
+                            const line = self.$refs[pressedLine.ref];
+                            if (line.options.isUnitToRelation || line.options.isRelationToUnit) {
+                                let line = self.lines.find((l) => l.id === pressedLine.ref);
+                                let point = new Point(ev.clientX - 10*self.scale,ev.clientY - 10*self.scale);
+                                await self.addUnitOnRuntime(point);
+
+                                if (line.options.isUnitToRelation) {                                    
+                                    /* If line already connected to point - delete it */
+                                    if(line.src.unit.getType() === 'Point') {
+                                        line.src.onDelete();
+                                    }
+
+                                    /* Change line destination to new Point */
+                                    let relation = line.dest;
+                                    await relation.changeSrcOnRuntime(point.getUID());
+
+                                } else if (line.options.isRelationToUnit) {
+                                    /* Change line destination to new Point */
+                                    let relation = line.src;
+                                    await relation.changeDestOnRuntime(point.getUID());
+
+                                }
+                                pressedUnit = self.$refs[point.getUID()].$el;
+                                console.log(self.lines);                             
+                            } else if(line.options.isInfoToEnum) {
+                                pressedLine = null;
+                            }
+                            // const line = self.$refs[pressedLine.ref];
+                            // line.onpointerdown(ev);
+                            
+                            // self.deleteLineOnRuntime(pressedLine.ref);
                         }
                         /* Click on Board element */ 
                         else {
@@ -313,11 +378,17 @@
                         let movementY = evCache[0].clientY - lastY;
                         lastX = evCache[0].clientX;
                         lastY = evCache[0].clientY;
-                        if (pressedUnit) {
+                        if (pressedConnector) {
+                            console.log('asdasd');
+                        }
+                        else if (pressedUnit) {
                             let unitId = pressedUnit.ref;
                             self.$refs[unitId].onDrag(movementX, movementY);
-                        } /* Cursor on Board element */
-                        else {
+                        } else if(pressedLine) {
+                            const line = self.$refs[pressedLine.ref];
+                            line.onpointermove(ev);
+                        }/* Cursor on Board element */
+                        else if(pressedBoard) {
                             if (self.cursor === 'addGroup') {
                                 console.log(initialX, initialY);
                                 self.$refs['selection-box'].height += movementY;
@@ -344,7 +415,11 @@
                             self.unitList.forEach((unitObj)=>{
                                 let unit = self.$refs[unitObj.getUID()];
                                 unit.internalScaleTo(center.x, center.y, scaleBy);
-                            })
+                            });
+                            self.lines.forEach((lineObj) => {
+                                let line = self.$refs[lineObj.getUID()];
+                                line.internalScaleTo(center.x, center.y, scaleBy);
+                            });
                             self.scale *= scaleBy;
                             boardStore.setScale(self.scale);
                         }
@@ -376,9 +451,16 @@
                         lastX =0; lastY=0;
                         evCache = [];
 
-                        if (pressedUnit) {
+                        if (pressedConnector) {
+                            console.log('asasd');
+                        }
+                        else if (pressedUnit) {
                             let unitId = pressedUnit.ref;
                             self.$refs[unitId].onDragEnd();
+                            pressedUnit.classList.remove('dragged');
+                        } else if (pressedLine) {
+                            const line = self.$refs[pressedLine.ref];
+                            line.onpointerup(ev);
                         }
                     }
                 }
@@ -419,7 +501,11 @@
                         self.unitList.forEach((unitObj)=>{
                             let unit = self.$refs[unitObj.getUID()];
                             unit.internalScaleTo(e.clientX, e.clientY, scaleBy);
-                        })
+                        });
+                        self.lines.forEach((lineObj) => {
+                            let line = self.$refs[lineObj.id];
+                            line.internalScaleTo(e.clientX, e.clientY, scaleBy);
+                        });
                         self.scale *= scaleBy;
                         boardStore.setScale(self.scale);
                     });
@@ -486,16 +572,19 @@
             /**
              * 
              */
-            async drawLine(src,dest, options){
+            async addLineOnRuntime(srcId,destId, options){
+                const src = this.$refs[srcId];
+                const dest = this.$refs[destId];
+
                 // TODO: Use is as js Set instead of js Array
                 /* Ordering the Id's and producing the same uid for any combinations of order */
                 let uid = '';
-                if (src.unit.getUID() > dest.unit.getUID()) {
-                    uid += dest.unit.getUID();
-                    uid += src.unit.getUID();
+                if (srcId > destId) {
+                    uid += destId;
+                    uid += srcId;
                 } else {
-                    uid += src.unit.getUID();
-                    uid += dest.unit.getUID();
+                    uid += srcId;
+                    uid += destId;
                 }
                 /* Every line is uniquely identified by uid  */
                 const isLineExists = this.lines.find((line) => line.id === uid);
@@ -504,21 +593,32 @@
                 }
                 await this.$nextTick();
 
-                console.log(this.lines);
-                return uid;
+                src.pushLine(uid);
+                dest.pushLine(uid);
+                // // this.pushLine(line2);
+                // // srcUnit.pushLine(line1);    
+                // // destUnit.pushLine(line2);
+
+                // console.log(this.lines);
+                // return uid;
             },  
             async deleteLineOnRuntime(lineId) {
-                console.log(this.lines);
                 this.lines = this.lines.filter((l)=>{ 
                     if(l.id !== lineId)
+                    {
                         return l;
+                    } else {
+                        l.src.removeLine(l.id);
+                        l.dest.removeLine(l.id);
+                    }
+
                 });
                 await this.$nextTick();
             },
             /**
              * Gets a Relation Unit and starts drawing procedure on screen
              */
-            async createRelation(srcId,destId,type) {
+            async createRelation(srcId,destId,type, options=null) {
                 if (srcId) {
                     this.relateFrom = srcId;
                     console.log('relation from ' + srcId);
@@ -531,13 +631,14 @@
                     this.relateType = type;
                     console.log('relation type is ' + type);
                 }
+
                 /* Destination is missing, indicate Relation linkage */
                 if (destId == null && this.cursor !== 'linkage') {
                     this.cursor = 'linkage';   
                 }
 
                 if (this.relateFrom && this.relateTo && this.relateType) {
-                    let relation = new Relation(this.relateFrom ,this.relateTo, this.relateType);
+                    let relation = new Relation(this.relateFrom ,this.relateTo, this.relateType, options);
                     await this.addUnitOnRuntime(relation);
 
                     /* If related items are in a group, add relation to group */
@@ -598,7 +699,6 @@
                 this.setInteractions();
             },
             cursor: function(cursor){
-                console.log(cursor);
                 if (cursor === 'linkage') {
                     document.body.style.cursor = 'cell';
                 }

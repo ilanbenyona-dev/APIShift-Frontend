@@ -1,5 +1,32 @@
 <template>
         <div id="board" v-if="isInitialized">
+            <svg xlmns="http://www.w3.org/2000/svg" class="lines">
+                <defs>
+                    <marker id="black-arrow" markerWidth="5" markerHeight="5" refX="0" refY="5"
+                    viewBox="0 0 10 10" orient="auto-start-reverse" style="opacity: 0.85">
+                        <path d="M 0 0 L 10 5 L 0 10 z" />
+                    </marker>
+                    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto" markerUnits="strokeWidth">
+                        <path d="M0,0 L0,6 L9,3 z" fill="rgba(255,0,0,0.9)" />
+                    </marker>
+                    <marker id="arrow1" viewBox="0 0 492.004 492.004" markerWidth="5" markerHeight="5" refX="285" refY="246" orient="auto-start-reverse">
+                        <path d="M382.678,226.804L163.73,7.86C158.666,2.792,151.906,0,144.698,0s-13.968,2.792-19.032,7.86l-16.124,16.12
+                        c-10.492,10.504-10.492,27.576,0,38.064L293.398,245.9l-184.06,184.06c-5.064,5.068-7.86,11.824-7.86,19.028
+                        c0,7.212,2.796,13.968,7.86,19.04l16.124,16.116c5.068,5.068,11.824,7.86,19.032,7.86s13.968-2.792,19.032-7.86L382.678,265
+                        c5.076-5.084,7.864-11.872,7.848-19.088C390.542,238.668,387.754,231.884,382.678,226.804z"/>
+                    </marker>
+
+                </defs>
+                <line-kit v-for="line in lines" :key="line.id" :ref="line.id"
+                    class="line"
+                    :src="line.src"
+                    :dest="line.dest"
+                    :id="line.id"
+                    :scale="scale"
+                    :options="line.options"
+                    :zIndex="zIndex">
+                </line-kit>
+            </svg>
             <template v-for="(unit) in unitList"
                 :key="unit._id">
                 <type-unit class="unit" v-if="unit._type === 'Type' && renderKey >= 0"
@@ -59,37 +86,6 @@
                 </group-unit>
                 <!-- <div :ref="unit._id" v-if="unit._type === 'Group' && renderKey >= 6">a</div> -->
             </template> 
-            <template v-if="renderKey >= 6">
-                <svg xlmns="http://www.w3.org/2000/svg" class="svg">
-                    <defs>
-                        <marker id="black-arrow" markerWidth="5" markerHeight="5" refX="0" refY="5"
-                        viewBox="0 0 10 10" orient="auto-start-reverse" style="opacity: 0.85">
-                            <path d="M 0 0 L 10 5 L 0 10 z" />
-                        </marker>
-                        <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto" markerUnits="strokeWidth">
-                            <path d="M0,0 L0,6 L9,3 z" fill="rgba(255,0,0,0.9)" />
-                        </marker>
-                        <marker id="arrow1" viewBox="0 0 492.004 492.004" markerWidth="5" markerHeight="5" refX="285" refY="246" orient="auto-start-reverse">
-                            <path d="M382.678,226.804L163.73,7.86C158.666,2.792,151.906,0,144.698,0s-13.968,2.792-19.032,7.86l-16.124,16.12
-                            c-10.492,10.504-10.492,27.576,0,38.064L293.398,245.9l-184.06,184.06c-5.064,5.068-7.86,11.824-7.86,19.028
-                            c0,7.212,2.796,13.968,7.86,19.04l16.124,16.116c5.068,5.068,11.824,7.86,19.032,7.86s13.968-2.792,19.032-7.86L382.678,265
-                            c5.076-5.084,7.864-11.872,7.848-19.088C390.542,238.668,387.754,231.884,382.678,226.804z"/>
-                        </marker>
-
-                    </defs>
-                    <line-kit v-for="line in lines" :key="line.id" :ref="line.id"
-                        class="line"
-                        :src="line.src"
-                        :dest="line.dest"
-                        :id="line.id"
-                        :scale="scale"
-                        :options="line.options"
-                        :zIndex="zIndex">
-                        <!-- Line added -->
-                    </line-kit>
-                </svg>
-
-            </template>
             <template v-for="(unit) in unitList"
                 :key="unit._id">
                 <point-unit class="unit" v-if="unit._type === 'Point' && renderKey >= 5"
@@ -102,6 +98,8 @@
                 </point-unit>
                 <!-- <div :ref="unit._id" v-if="unit._type === 'Group' && renderKey >= 6">a</div> -->
             </template> 
+
+
             <div id="control-point"></div>
             <selection-box v-if="cursor=='addGroup'" ref="selection-box"></selection-box>
         </div>
@@ -221,6 +219,17 @@ import { Helpers } from '../assets/js/Helpers';
                     return Math.sqrt(Math.pow(point1.clientX - point2.clientX, 2) + Math.pow(point1.clientY - point2.clientY,2));
                 }
 
+                function closest(elementArr, lookup) {
+                    for (let index = 0; index < elementArr.length; index++) {
+                        const element = elementArr[index].closest(lookup);
+                        if (element) {
+                            console.log(element);
+                            return element;
+                        }
+                    }
+                    return null;
+                }
+
                 /* Handle ponter down event */
                 async function pointerdown_handler(ev) {
                     ev.preventDefault();
@@ -257,12 +266,18 @@ import { Helpers } from '../assets/js/Helpers';
 
                         // console.log();
                         /* Figure unit,line,connector,board values from the pressed element */
-                        pressedUnit = ev.target.closest(".unit");
+                        pressedUnit = closest(document.elementsFromPoint(ev.clientX, ev.clientY),".unit");
                         if (pressedUnit && pressedUnit.classList.contains('placeholder')) 
                             pressedUnit = pressedUnit.parentNode.closest(".unit");
-                        pressedLine = ev.target.closest('.line');
-                        pressedConnector = ev.target.closest('.connector');
-                        pressedBoard = ev.target.closest('#board');
+                        pressedLine = closest(document.elementsFromPoint(ev.clientX, ev.clientY),".line");
+                        pressedConnector = closest(document.elementsFromPoint(ev.clientX, ev.clientY),".connector");
+                        pressedBoard = closest(document.elementsFromPoint(ev.clientX, ev.clientY),"#board");
+
+                        if (pressedUnit) {
+                            if (pressedUnit.classList.contains('unit-group') && pressedLine) {
+                                pressedUnit = null;
+                            }
+                        }
 
                         if (pressedConnector) {
                                 // let isLeft = ev.target.closest('.connector-left');
@@ -483,17 +498,37 @@ import { Helpers } from '../assets/js/Helpers';
                     }
                 }
 
+                // function initLines() {
+                //     /* Install event handlers for the board */
+                //     var el = document.querySelector("#board .lines");
+                //     el.onpointerdown = pointerdown_handler;
+                //     el.onpointermove = pointermove_handler;
+
+                //     /* Pointer has canceled */
+                //     el.onpointerup = pointerup_handler;
+                //     el.onpointercancel = pointerup_handler;
+                // }
+                // function initUnits() {
+                //     /* Install event handlers for the board */
+                //     var el = document.querySelector("#board .units");
+                //     el.onpointerdown = pointerdown_handler;
+                //     el.onpointermove = pointermove_handler;
+
+                //     /* Pointer has canceled */
+                //     el.onpointerup = pointerup_handler;
+                //     el.onpointercancel = pointerup_handler;
+                // }
                 function init() {
                     /* Install event handlers for the board */
-                    var el = document.getElementById("board");
+                    var el = document.querySelector("#board");
                     el.onpointerdown = pointerdown_handler;
                     el.onpointermove = pointermove_handler;
 
-                    /* Po  nter has canceled */
+                    /* Pointer has canceled */
                     el.onpointerup = pointerup_handler;
                     el.onpointercancel = pointerup_handler;
-                    // el.onpointerout = pointerup_handler;
-                    // el.onpointerleave = pointerup_handler;
+                    // initUnits();
+                    // initLines();
 
                     /* Zooming on desktop && laptop, tested on chrome and macbook */
                     el.addEventListener('wheel' , (e) => {
@@ -510,10 +545,7 @@ import { Helpers } from '../assets/js/Helpers';
                             let unit = self.$refs[unitObj.getUID()];
                             unit.internalScaleTo(e.clientX, e.clientY, scaleBy);
                         });
-                        self.lines.forEach((lineObj) => {
-                            let line = self.$refs[lineObj.id];
-                            line.internalScaleTo(e.clientX, e.clientY, scaleBy);
-                        });
+
                         self.scale *= scaleBy;
                         boardStore.setScale(self.scale);
                     });
@@ -730,12 +762,18 @@ import { Helpers } from '../assets/js/Helpers';
         overflow: hidden;
         -webkit-overflow-scrolling: touch;
     }
-    .svg {
+    .lines {
         position: fixed;
         display: block;
         width: 100%;
         height: 100%;
         z-index: 500;
+    }
+    .units {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        display: block;
     }
     /* BASE UNIT SETTINGS */
     .unit {

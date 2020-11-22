@@ -99,9 +99,6 @@ export default {
             return this.unit.getText();
         },
         transformation () {
-            if(this.groupContainer) {
-                this.groupContainer.setHeightAndWidth();
-            }
             return {
                 transform: `translate3d(${this.left}px,${this.top}px, 0) scale(${this.scale})`,
                 fontSize: 13+ 'px'

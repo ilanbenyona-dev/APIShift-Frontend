@@ -87,10 +87,6 @@ export default {
             let board = this.$parent;
             var x,y,point, elRect = this.$el.getBoundingClientRect();
 
-            // /* TODO: Delete it */
-            // if (condition) {
-                
-            // }
             x = this.left + elRect.width/2 - 5*this.scale;
             y = this.top + elRect.height/2 - 5*this.scale;
             point = new Point(x,y,this.unit.getType());
@@ -133,7 +129,7 @@ export default {
                 return;
             }
             const isRelationToRelation = srcUnit.unit.getType() === destUnit.unit.getType() && destUnit.unit.getType() === "Relation";
-            const isReverse = srcUnit.unit.getType() === destUnit.unit.getType();
+            const isReverse = srcUnit === destUnit;
 
             await this.$parent.addLineOnRuntime(this.unit.getSrcId(), this.unit.getUID(), 
                 {isUnitToRelation: true,

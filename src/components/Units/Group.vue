@@ -27,6 +27,7 @@ export default {
             leftmostX: 0,
             upperboundY: 0,
             lowerboundY: 0,
+            groupZindex: 0,
             // Controller data
             containedUnits: [],
         }
@@ -44,9 +45,11 @@ export default {
         this.top = this.unit.ypos();
 
 
-        /* For each Unit in the db  */
+        /* Create vue components  */
         this.loadItemsFromDB();
 
+        this.setHeightAndWidth();
+        
         this.handleEditLogic();
     },
     updated: function() {
@@ -58,22 +61,7 @@ export default {
             
         },
         internalScaleTo: function(cx, cy, scaleBy) {
-            this.scale *=scaleBy;
-        },
-        /* position attached lines */
-        // updateLines() {
-        //     let board = this.$parent;
-        //     for (const lineId of this.lines) {
-        //         if (board.$refs[lineId]) {
-        //             board.$refs[lineId].updateLine();
-        //         }
-        //     }
-        // },
-        pushLine(lineId) {
-            this.lines.push(lineId);
-        },
-        removeLine(lineId) {
-            delete this.lines[this.lines.indexOf(lineId)];
+            this.scale *= scaleBy;
         },
         /* Unit methods */
         getUnit: function() {
@@ -84,16 +72,16 @@ export default {
             // Update global z-index and future values 
             // this.$emit('unitdragstart');
 
-            console.log('asdasd');
         },
         onDrag: function (dx,dy) {
             
-            this.left += dx;
-            this.top += dy;
+            // this.left += dx;
+            // this.top += dy;
 
             this.containedUnits.forEach((unit) => {
                 unit.left += dx;
                 unit.top += dy;
+                // console.log(unit);
             });
         },
         onDragEnd: function() {
@@ -152,6 +140,8 @@ export default {
             let padding = 10*this.scale;
             let rightmostX = -99999, leftmostX = 99999;
             let upperboundY = 99999, lowerboundY = -99999;
+            let minZindex = this.groupZindex;
+
             /* determine group element boundries */
             this.containedUnits.forEach(unit => {
                 let unitRect = unit.$el.getBoundingClientRect();
@@ -159,6 +149,7 @@ export default {
                 leftmostX = Math.min(leftmostX, unit.left);
                 upperboundY = Math.min(upperboundY, unit.top);
                 lowerboundY = Math.max(lowerboundY, unit.top + unitRect.height);
+                minZindex = Math.min(minZindex, unit.zIndex);
             });
 
             /* Add 10px padding to edges */
@@ -171,14 +162,13 @@ export default {
             this.left = leftmostX;
             this.top = upperboundY;
 
-            console.log( this.$el.querySelector('.unit-group__header').getBoundingClientRect().width);
-            let minWidth =  this.$el.querySelector('.unit-group__header').getBoundingClientRect().width;//this.$el.nextElementSibling.querySelector('.unit-group__header').getBoundingClientRect().width;
-            console.log((rightmostX - leftmostX) /this.scale);
-            // /* Determine width and height of items container */
-            this.width = minWidth + 50;//Math.max((rightmostX - leftmostX) /this.scale, minWidth);
-            this.height = (lowerboundY - upperboundY)/this.scale;
 
-            // this.updateLines();
+            // /* Determine width and height of items container */
+            this.width = (rightmostX - leftmostX) /this.scale;
+            this.height = (lowerboundY - upperboundY)/this.scale;
+            this.groupZindex = minZindex;
+
+            requestAnimationFrame(this.setHeightAndWidth);
         },
         /* position attached lines */
         updateLines() {
@@ -195,20 +185,24 @@ export default {
             return {
                 transform: `translate3d(${this.left}px,${this.top}px, 0) scale(${this.scale})`,
                 fontSize: 13+ 'px',
-                zIndex: this.zIndex
+                zIndex: this.groupZindex
             }
         },
         computedSize: function(){
             return {
-                width: `${this.width}px`,
+                // width: `${this.width}px`,
                 height: `${this.height}px`,
-                zIndex: this.zIndex
+                zIndex: this.groupZindex
+            }
+        },
+        computedWidth: function() {
+            return {
+                width: `${this.width}px`,
             }
         },
         computedHeader: function() {
-            console.log(this.zIndex);
             return {
-                zIndex: `${this.zIndex}`,
+                minWidth: `${this.width}px`,
                 background: 'white'
             }
         },
@@ -237,19 +231,6 @@ export default {
         },
         width: function() {
             this.updateLines();
-        },
-        editmode: function(mode) {
-            console.log(mode);
-            if(mode) {
-                /* Focus editable div */
-                let input = this.$el.querySelector('.input');
-                input.focus();
-            } else {
-                /* Blur editable div */
-                this.$el.blur();
-                this.isGhost = false;
-            }
-
         },
         text: function() {
             if (!this.text) {
@@ -296,7 +277,7 @@ export default {
                 color: black;
                 text-align: center;
                 height: 30px;
-                width: 30px;
+                min-width: 30px;
                 margin: auto;
                 margin-left: 0;
                 font-size: 17px;

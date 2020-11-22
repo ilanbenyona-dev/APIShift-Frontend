@@ -29,6 +29,7 @@
 // }
 
 import Unit from '../Unit.js'
+import Point from '../Units/Point';
 
 export default {
     mixins: [Unit],
@@ -67,22 +68,34 @@ export default {
         },
         onDelete: function () {
             let board = this.$parent;
-            
-            for (let i = 0; i < this.lines.length; i++) {
-                const lineId = this.lines[i];
-                const line = board.$refs[lineId];
-                if (line) {
-                    /* If line is from Relation , delete relation */
-                    if (line.options.isRelationToUnit) {
-                        line.src.onDelete();
+            var x,y,point, elRect = this.$el.getBoundingClientRect();
+
+            x = this.left + elRect.width/2 - 5*this.scale;
+            y = this.top + elRect.height/2 - 5*this.scale;
+            point = new Point(x,y,this.unit.getType());
+
+            this.lines.forEach(async (lineId) => {
+                let line = board.$refs[lineId];
+
+                /* Detach connected relations upon deletion */
+                if (line.src.unit.getType() === "Relation") {
+                    if (line.src.unit.getDestId() === this.unit.getUID()) {
+                        await board.addUnitOnRuntime(point);
+                        line.src.changeDestOnRuntime(point.getUID());
+                    } else {
+                        board.deleteLineOnRuntime(lineId);
                     }
-                    /* If line is to Relation , delete relation */
-                    else if (line.options.isUnitToRelation) {
-                        line.dest.onDelete();
+                }
+                else if (line.dest.unit.getType() === "Relation") {
+                    if (line.dest.unit.getSrcId() === this.unit.getUID()) {
+                        await board.addUnitOnRuntime(point);
+                        line.dest.changeSrcOnRuntime(point.getUID());
+                    } else {
+                        board.deleteLineOnRuntime(lineId);
                     }
-                 } 
+                }
                 board.deleteLineOnRuntime(lineId);
-            }
+            });
 
             if (this.groupContainer) {
                 this.groupContainer.removeItem(this.unit.getUID())

@@ -224,12 +224,6 @@ export default {
                     c2y = this.y4 + py;
                     x4 = this.x4;
                     y4 = this.y4;
-                    if (this.options.isReverse) {
-                        c2x = this.x1;
-                        c2y = this.y1 - py;
-                        c1x = this.x4;
-                        c1y = this.y4 + py;
-                    }
                 }
                 
             }
@@ -241,6 +235,12 @@ export default {
                 c1y = this.y1;
                 c2x = this.x4 + this.dx
                 c2y = this.y4;
+                // if (this.options.isReverse) {
+                //     c2x = this.x1;
+                //     c2y = this.y1 - py;
+                //     c1x = this.x4;
+                //     c1y = this.y4 + py;
+                // }
                 x4 = this.x4;
                 y4 = this.y4;
                 if (this.options.isRelationToUnit) {
@@ -251,12 +251,12 @@ export default {
                 }
                 if (this.options.isUnitToRelation) {
                     if (this.options.relationType === Constants.MANY_TO_MANY) {
-                    x1 -= 5 * this.scale;
-                    c1x -= dmx - this.scale*15;
-                    c2x += dmx + 15*this.scale;
-                    x4 += dmx;//5 * this.scale;
+                        x1 -= 5 * this.scale;
+                        c1x -= dmx - this.scale*15;
+                        c2x += dmx + 15*this.scale;
+                        x4 += dmx;//5 * this.scale;
                     }
-                }
+                }   
                     
             }
             if (!(x1&&y1&&c1x&&c1y&&c2x&&c2y&&c2y&&x4&&y4)) {

@@ -3,7 +3,7 @@
         <div class="unit-relation__header">
             <div class="unit-relation__header__text single-line input"
             :contenteditable="editmode"
-            @keydown="keydown">{{unit.getUID()}}</div>                 
+            @keydown="keydown">{{lines}}</div>                 
             <div class="unit-relation__header__type">R</div>
         </div>
         <div class="connector">
@@ -31,7 +31,7 @@ export default {
             let srcInfo = self.$parent.$refs[self.unit.getSrcId()];
             let destInfo = self.$parent.$refs[self.unit.getDestId()];
 
-            console.log(self.unit.getSrcId());
+
             initialX = (srcInfo.left + destInfo.left) / 2;
             initialY = (srcInfo.top + destInfo.top) / 2;   
         }
@@ -61,59 +61,47 @@ export default {
             this.$el.style.zIndex = this.zIndex;
         },
         onDrag: function (dx,dy) {
+            // var board = this.$parent;
+
             /* Position element in the UI level */
             this.left += dx;
             this.top += dy;
+
+            /* Optional - move points attached */
+            // this.lines.forEach((lineId) => {
+            //     let line = board.lines.find((l)=> l.id === lineId);
+            //     console.log(line);
+
+            //     if (line.src.unit.getType() === "Point") {
+            //         line.src.moveBy(dx,dy);
+            //     }
+            //     if (line.dest.unit.getType() === "Point") {
+            //         line.dest.moveBy(dx,dy);
+            //     }
+            // })
         },
         onDragEnd: function() {
             this.$el.dispatchEvent(new Event('unitdragend'));
         },
-        async onDelete() {
+        onDelete() {
             let board = this.$parent;
-            // let srcUnit = board.$refs[this.unit.getSrcId()];
-            // let destUnit = board.$refs[this.unit.getDestId()];
+            var x,y,point, elRect = this.$el.getBoundingClientRect();
 
-            // for (let i = 0; i < this.lines.length; i++) {
-            //     const lineId = this.lines[i];
-            //     const line = board.$refs[lineId];
-            //     if (line) {
-            //         if (line.src.unit.getType() === "Relation") {
-            //             if (line.src.unit.getDestId() === this.unit.getUID()) {
-            //                 line.src.onDelete();
-            //             }
-            //         }
-            //         if (line.dest.unit.getType() === "Relation") {
-            //             if (line.dest.unit.getSrcId() === this.unit.getUID()) {
-            //                 line.dest.onDelete();
-            //             }
-            //         }
-            //         if (srcUnit === line.dest || srcUnit === line.src) {
-            //             srcUnit.removeLine(lineId);
-            //             board.deleteLineOnRuntime(lineId);
-            //         }
-            //         else if (destUnit === line.dest || destUnit === line.src) {
-            //             destUnit.removeLine(lineId);
-            //             board.deleteLineOnRuntime(lineId);
-            //         }
-            //     }
-
+            // /* TODO: Delete it */
+            // if (condition) {
+                
+            // }
+            x = this.left + elRect.width/2 - 5*this.scale;
+            y = this.top + elRect.height/2 - 5*this.scale;
+            point = new Point(x,y,this.unit.getType());
+            
             this.lines.forEach(async (lineId) => {
                 let line = board.$refs[lineId];
-                let x,y, point, elRect = this.$el.getBoundingClientRect();
+                // let x,y, point, elRect = this.$el.getBoundingClientRect();
 
                 /* Detach connected relations upon deletion */
-                if (line.src.unit.getType() === "Relation" || line.dest.unit.getType() === "Relation") {
-                    x = this.left + elRect.width/2 - 5*this.scale;
-                    y = this.top + elRect.height/2 - 5*this.scale;
-                    point = new Point(x,y,this.unit.getType());
-                    console.log('asad');
-                }
-
                 if (line.src.unit.getType() === "Relation") {
                     if (line.src.unit.getDestId() === this.unit.getUID()) {
-                        x = this.left + elRect.width/2 - 5*this.scale;
-                        y = this.top + elRect.height/2 - 5*this.scale;
-                        point = new Point(x,y,this.unit.getType());
                         await board.addUnitOnRuntime(point);
                         line.src.changeDestOnRuntime(point.getUID());
                     } else {
@@ -122,9 +110,6 @@ export default {
                 }
                 else if (line.dest.unit.getType() === "Relation") {
                     if (line.dest.unit.getSrcId() === this.unit.getUID()) {
-                        x = this.left + elRect.width/2 - 5*this.scale;
-                        y = this.top + elRect.height/2 - 5*this.scale;
-                        point = new Point(x,y,this.unit.getType());
                         await board.addUnitOnRuntime(point);
                         line.dest.changeSrcOnRuntime(point.getUID());
                     } else {
@@ -137,7 +122,6 @@ export default {
 
         },
         async mountLines() {
-            console.log(this);
             let srcUnit = this.$parent.$refs[this.unit.getSrcId()];
             let destUnit = this.$parent.$refs[this.unit.getDestId()];
             if (!srcUnit || !destUnit) {
@@ -145,12 +129,17 @@ export default {
                 return;
             }
 
-            
+            if (this.lines.length >= 2) {
+                return;
+            }
             const isRelationToRelation = srcUnit.unit.getType() === destUnit.unit.getType() && destUnit.unit.getType() === "Relation";
+            const isReverse = srcUnit.unit.getType() === destUnit.unit.getType();
+
             await this.$parent.addLineOnRuntime(this.unit.getSrcId(), this.unit.getUID(), 
                 {isUnitToRelation: true,
                   relationType: this.unit.getRelationType(),
                   isRelationToRelation,
+                  isReverse
                 });
             if (isRelationToRelation) {
                 this.$el.querySelector('.connector-top').classList.add('active');            
@@ -162,6 +151,7 @@ export default {
                 {isRelationToUnit: true, 
                   relationType: this.unit.getRelationType(),
                   isRelationToRelation,
+                  isReverse
                 });
             if (isRelationToRelation) {
                 this.$el.querySelector('.connector-bottom').classList.add('active');            
@@ -169,50 +159,24 @@ export default {
                 this.$el.querySelector('.connector-right').classList.add('active');            
             }
 
-            console.log(this.$parent.lines);
             // this.pushLine(line1);
             // this.pushLine(line2);
             // srcUnit.pushLine(line1);    
             // destUnit.pushLine(line2);
 
-            console.log(this.lines);
-        },
-        removeLine(lineId) {
-
-            this.lines = this.lines.filter((l) => {
-                if (l !== lineId) {
-                    console.log(l);
-                    return l;
-                }
-            });
-
-            // if (this.lines.length === 0) {
-            //     let board = this.$parent;
-            //     if (this.groupContainer) {
-            //         this.groupContainer.removeItem(this.unit.getUID())
-            //     }
-            //     board.deleteUnitOnRuntime(this.unit.getUID());     
-            // }
         },
         async changeDestOnRuntime(newDest) {
             const board = this.$parent;
-            const lineSrc = this.unit.getUID();
-            const lineDest = this.unit.getDestId();
+            const destItem = board.$refs[this.unit.getDestId()];
 
             /* If line already connected to point - delete it */
-            if (board.$refs[lineDest].unit.getType() === "Point") {
-                board.$refs[lineDest].onDelete();
+            if (destItem.unit.getType() === "Point") {
+                destItem.onDelete();
             }
 
-            /* Ordering the Id's and producing the same uid for any combinations of order */
-            let lineId = '';
-            if (lineSrc > lineDest) {
-                lineId += lineDest;
-                lineId += lineSrc;
-            } else {
-                lineId += lineSrc;
-                lineId += lineDest;
-            }
+            /* Find the line to dest item */
+            let lineId = this.lines.find((l) => destItem.lines.includes(l));
+
 
             /* Change relation dest on UI level (view) */
             await board.deleteLineOnRuntime(lineId);
@@ -224,25 +188,17 @@ export default {
             /* Change relation dest on Data level (model) */
             this.unit.setDestId(newDest);
         },
-        async changeSrcOnRuntime(newSrc) {
+        async changeSrcOnRuntime(newSrc, ) {
             const board = this.$parent;
-            const lineDest = this.unit.getUID();
-            const lineSrc = this.unit.getSrcId();
+            const srcItem = board.$refs[this.unit.getSrcId()];
 
             /* If line already connected to point - delete it */
-            if (board.$refs[lineSrc].unit.getType() === "Point") {
-                board.$refs[lineSrc].onDelete();
+            if (srcItem.unit.getType() === "Point") {
+                srcItem.onDelete();
             }
 
-            /* Ordering the Id's and producing the same uid for any combinations of order */
-            let lineId = '';
-            if (lineSrc > lineDest) {
-                lineId += lineDest;
-                lineId += lineSrc;
-            } else {
-                lineId += lineSrc;
-                lineId += lineDest;
-            }
+            /* Find the line to dest item */
+            let lineId = this.lines.find((l) => srcItem.lines.includes(l));
 
             /* Change relation dest on UI level (view) */
             await board.deleteLineOnRuntime(lineId);
@@ -268,7 +224,6 @@ export default {
         isBoardRendered: function() {
             /* Render lines upon initial renderation */
             this.mountLines();
-            console.log(`${this.unit.getUID()} has ${this.lines} \n with length of ${this.lines.length}`);
 
         },
         lines: function(lines) {

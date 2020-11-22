@@ -4,7 +4,7 @@
             <div class="unit-info__header__text single-line input"
             :contenteditable="editmode"
             @keydown="keydown">
-                {{text}}
+                {{lines}}
             </div>  
             <div class="unit-info__header__type">I</div>
         </div>
@@ -116,9 +116,6 @@ export default {
             if (enumId) {
                 this.drawLineToEnum(enumId);
             }
-        },
-        removeLine(lineId) {
-            delete this.lines[this.lines.indexOf(lineId)];
         },
     },
 

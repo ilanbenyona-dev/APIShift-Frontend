@@ -82,9 +82,14 @@ export default {
         /* Drag & Drop methods  */
         onDragStart: function() {
             // Update global z-index and future values 
-            this.$emit('unitdragstart');
+            // this.$emit('unitdragstart');
+
+            console.log('asdasd');
         },
         onDrag: function (dx,dy) {
+            
+            this.left += dx;
+            this.top += dy;
 
             this.containedUnits.forEach((unit) => {
                 unit.left += dx;
@@ -92,7 +97,7 @@ export default {
             });
         },
         onDragEnd: function() {
-            this.$emit('unitdragend');
+            // this.$emit('unitdragend');
         },
         onDelete: function () {
             let board = this.$parent;
@@ -166,9 +171,11 @@ export default {
             this.left = leftmostX;
             this.top = upperboundY;
 
-
+            console.log( this.$el.querySelector('.unit-group__header').getBoundingClientRect().width);
+            let minWidth =  this.$el.querySelector('.unit-group__header').getBoundingClientRect().width;//this.$el.nextElementSibling.querySelector('.unit-group__header').getBoundingClientRect().width;
+            console.log((rightmostX - leftmostX) /this.scale);
             // /* Determine width and height of items container */
-            this.width = (rightmostX - leftmostX) /this.scale;
+            this.width = minWidth + 50;//Math.max((rightmostX - leftmostX) /this.scale, minWidth);
             this.height = (lowerboundY - upperboundY)/this.scale;
 
             // this.updateLines();
@@ -188,14 +195,14 @@ export default {
             return {
                 transform: `translate3d(${this.left}px,${this.top}px, 0) scale(${this.scale})`,
                 fontSize: 13+ 'px',
-                zIndex: this.zIndex-1000
+                zIndex: this.zIndex
             }
         },
         computedSize: function(){
             return {
                 width: `${this.width}px`,
                 height: `${this.height}px`,
-                zIndex: this.zIndex-1000
+                zIndex: this.zIndex
             }
         },
         computedHeader: function() {
@@ -262,8 +269,9 @@ export default {
         display: flex;
         flex-direction: column;
         background-color: rgba(255, 255, 255, 0.10);
-        border-color: rgba(255, 87, 51, .6);
+        border: none;
         padding: 0;
+        z-index: 99999;
 
         &__header {
             display: flex;
@@ -271,7 +279,7 @@ export default {
             justify-content: space-between;
             font-weight: 900;
             padding: 10px;
-            border-top: 2px solid rgba(255, 87, 51, .6);
+            border: 2px solid rgba(255, 87, 51, .6);
             border-bottom-right-radius: 12px;
             border-bottom-left-radius: 12px;
             order: 1;
@@ -298,7 +306,13 @@ export default {
         }
 
         &__items {
+            display: block;
+            height: 100%;
+            width: 100%;
             order: 0;
+            border-top: 3px dashed rgba(255, 87, 51, .6);
+            border-right: 3px dashed rgba(255, 87, 51, .6);
+            border-left: 3px dashed rgba(255, 87, 51, .6);
         }
 
         &__connector {

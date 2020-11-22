@@ -17,12 +17,10 @@ import { Helpers } from '../../assets/js/Helpers';
 export default {
     mixins: [Unit],
     mounted: function() {   
-        console.log(this.$el);
         /* Position element */
         this.left = this.unit.xpos();
         this.top = this.unit.ypos();
 
-        console.log(this.unit, this.unit.ypos());
         /* Positon element lines */
         this.updateLines();
 
@@ -50,22 +48,25 @@ export default {
 
             
             /* If the Point drops on Item, link relation to the Item */
-            let itemElements = [...document.querySelectorAll('.unit-info'),
-                                ...document.querySelectorAll('.unit-relation'),
-                                ...document.querySelectorAll('.unit-group')]
+            let itemElements = [...document.querySelectorAll('.unit-group__header'),
+                                ...document.querySelectorAll('.unit-info'),
+                                ...document.querySelectorAll('.unit-relation')];
             let i = itemElements.length;
             while (--i > -1) {
                 if (Helpers.hitTest(itemElements[i], this.$el, 1)) {
-                    console.log(this.lines[0]);
                     /* get targeted Info element */
                     let itemId = itemElements[i].ref;
-                    let lineId = this.lines[0];              
+                    let lineId = this.lines[0]; 
                     var line = board.lines.find((l)=> l.id === lineId), relation;
 
+                    if (itemElements[i] === line.src.$el || itemElements[i] === line.dest.$el) {
+                        return;
+                    }
+                    console.log(line);
                     if (line.options.isUnitToRelation) {
                         relation = line.dest;
                         relation.changeSrcOnRuntime(itemId);
-                    } else if (line.options.isRelationToUnit) {
+                    } if (line.options.isRelationToUnit) {
                         relation = line.src;
                         relation.changeDestOnRuntime(itemId);
                     }
@@ -78,6 +79,17 @@ export default {
             board.deleteUnitOnRuntime(this.$el.ref);
         },
   
+    },
+    watch: {
+        lines: function(lines) {
+            if (lines.length === 0) {
+                let board = this.$parent;
+                if (this.groupContainer) {
+                    this.groupContainer.removeItem(this.unit.getUID())
+                }
+                board.deleteUnitOnRuntime(this.unit.getUID());     
+            }
+        }
     },
     computed: {
         transformation () {

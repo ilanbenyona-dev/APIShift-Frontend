@@ -1,7 +1,6 @@
 <template class="line">
     <!-- Info-to-Enum dashed line -->
         <g>
-            <circle class="point" :cx="cx" :cy="cy" :r="getComputedRadius"/>
             <path
                 :marker-start="getComputedMarkerStart"
                 :marker-end="getComputedMarkerEnd"
@@ -37,11 +36,19 @@ export default {
         else if (this.options.isUnitToRelation) {
             this.srcHandle = this.src.$el.querySelector('.connector-right');
             this.destHandle = this.dest.$el.querySelector('.connector-left');
+            // if (this.options.isReverse) {
+            //     this.srcHandle = this.src.$el.querySelector('.connector-left');
+            //     this.destHandle = this.dest.$el.querySelector('.connector-right');
+            // }
             this.bezierWeight = 0.7;
         }
         else if (this.options.isRelationToUnit) {
             this.srcHandle = this.src.$el.querySelector('.connector-right');
-            this.destHandle = this.dest.$el.querySelector('.connector-left') ;
+            this.destHandle = this.dest.$el.querySelector('.connector-left');
+            // if (this.options.isReverse) {
+            //     this.srcHandle = this.src.$el.querySelector('.connector-left');
+            //     this.destHandle = this.dest.$el.querySelector('.connector-right');
+            // }
             this.bezierWeight = 0.7;
         }
         // TODO: It can be removed - not critical
@@ -217,6 +224,12 @@ export default {
                     c2y = this.y4 + py;
                     x4 = this.x4;
                     y4 = this.y4;
+                    if (this.options.isReverse) {
+                        c2x = this.x1;
+                        c2y = this.y1 - py;
+                        c1x = this.x4;
+                        c1y = this.y4 + py;
+                    }
                 }
                 
             }

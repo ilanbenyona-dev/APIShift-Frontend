@@ -127,6 +127,7 @@
     import SelectionBox from './Kit/SelectionBox';
 
     import { Relation, Enum, Type , Group, Point} from '../assets/js/unit-classes';
+import { Helpers } from '../assets/js/Helpers';
 
     function getScaleMultiplier(delta) {
       var sign = Math.sign(delta), speed = 1;
@@ -254,6 +255,7 @@
                         lastX = evCache[0].clientX;
                         lastY = evCache[0].clientY;
 
+                        // console.log();
                         /* Figure unit,line,connector,board values from the pressed element */
                         pressedUnit = ev.target.closest(".unit");
                         if (pressedUnit && pressedUnit.classList.contains('placeholder')) 
@@ -301,22 +303,28 @@
 
                                 if (line.options.isUnitToRelation) {                                    
                                     /* If line already connected to point - delete it */
-                                    if(line.src.unit.getType() === 'Point') {
-                                        line.src.onDelete();
-                                    }
+                                    // if(line.src.unit.getType() === 'Point') {
+                                    //     line.src.onDelete();
+                                    // }
 
-                                    /* Change line destination to new Point */
+                                    console.log(line.options);
+
+                                    // /* Change line destination to new Point */
                                     let relation = line.dest;
                                     await relation.changeSrcOnRuntime(point.getUID());
 
                                 } else if (line.options.isRelationToUnit) {
-                                    /* Change line destination to new Point */
+                                    /* If line already connected to point - delete it */
+                                    // if(line.dest.unit.getType() === 'Point') {
+                                    //     line.dest.onDelete();
+                                    // }
+                                    // /* Change line destination to new Point */
                                     let relation = line.src;
                                     await relation.changeDestOnRuntime(point.getUID());
+                                    console.log(line.options);
 
                                 }
                                 pressedUnit = self.$refs[point.getUID()].$el;
-                                console.log(self.lines);                             
                             } else if(line.options.isInfoToEnum) {
                                 pressedLine = null;
                             }
@@ -578,14 +586,8 @@
 
                 // TODO: Use is as js Set instead of js Array
                 /* Ordering the Id's and producing the same uid for any combinations of order */
-                let uid = '';
-                if (srcId > destId) {
-                    uid += destId;
-                    uid += srcId;
-                } else {
-                    uid += srcId;
-                    uid += destId;
-                }
+                let uid = Helpers.generateUID();
+
                 /* Every line is uniquely identified by uid  */
                 const isLineExists = this.lines.find((line) => line.id === uid);
                 if (!isLineExists) {
@@ -743,7 +745,7 @@
         border-width: 3px;
         border-style: solid;
         border-radius: 12px;
-        box-shadow: rgba(40, 60, 75, 0.15) 0px 3px 6px;
+        // box-shadow: rgba(40, 60, 75, 0.15) 0px 3px 6px;
         transition: box-shadow .2s ease-in-out;
         transition: scale .2s ease-in-out;
         transition: border-color .3s ease;  
@@ -754,7 +756,7 @@
             border-style: dashed;
         }
         &:active {
-            box-shadow: rgba(40, 60, 75, 0.35) 0px 20px 60px;  
+            // box-shadow: rgba(40, 60, 75, 0.35) 0px 20px 60px;  
             -webkit-transform: scale(1.2);
             -moz-transform: scale(1.2);
             -o-transform: scale(1.2);

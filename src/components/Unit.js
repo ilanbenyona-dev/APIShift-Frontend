@@ -80,7 +80,14 @@ export default {
             this.lines.push(lineId);
         },
         removeLine(lineId) {
-            delete this.lines[this.lines.indexOf(lineId)];
+            this.lines = this.lines.filter((l) => {
+                if (l !== lineId) {
+                    return l;
+                }
+            });
+        },
+        findLine(lineId) {
+            return this.lines.find((l) => {l === lineId});
         },
         /* Unit methods */
         getUnit: function() {

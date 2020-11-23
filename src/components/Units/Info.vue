@@ -4,7 +4,7 @@
             <div class="unit-info__header__text single-line input"
             :contenteditable="editmode"
             @keydown="keydown">
-                {{unit.getUID()}}
+                {{lines}}
             </div>  
             <div class="unit-info__header__type">I</div>
         </div>
@@ -126,7 +126,7 @@ export default {
             /* Mount line with Enum if exists */
             let enumId = this.unit.getEnumId();
             if (enumId) {
-                this.drawLineToEnum(enumId);
+                // this.drawLineToEnum(enumId);
             }
         },
     },

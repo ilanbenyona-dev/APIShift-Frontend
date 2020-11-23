@@ -163,7 +163,7 @@ export default {
                 unit.$el.style.zIndex = self.zIndex + 1;
 
                 unit.left = self.left + self.$el.getBoundingClientRect().width/2 - unit.$el.getBoundingClientRect().width/2;
-                unit.top = self.$el.querySelector('.unit-enum__header').getBoundingClientRect().bottom + (index * unit.$el.getBoundingClientRect().height);
+                unit.top = 15*self.scale + self.$el.querySelector('.unit-enum__header').getBoundingClientRect().bottom + (index * unit.$el.getBoundingClientRect().height);
             });
         },
         createPlaceHolders() {

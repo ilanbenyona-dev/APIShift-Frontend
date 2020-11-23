@@ -51,6 +51,8 @@ export default {
             // }
             this.bezierWeight = 0.7;
         }
+        self.updateLine();
+
         // TODO: It can be removed - not critical
         setInterval(() => {
             self.updateLine();

@@ -332,7 +332,7 @@ import { Helpers } from '../assets/js/Helpers';
                                     // /* Change line destination to new Point */
                                     let relation = line.dest;
                                     await relation.changeSrcOnRuntime(point.getUID());
-
+                                    await relation.changeDestOnRuntime(relation.unit.getDestId());
                                 } else if (line.options.isRelationToUnit) {
                                     /* If line already connected to point - delete it */
                                     // if(line.dest.unit.getType() === 'Point') {
@@ -341,6 +341,7 @@ import { Helpers } from '../assets/js/Helpers';
                                     // /* Change line destination to new Point */
                                     let relation = line.src;
                                     await relation.changeDestOnRuntime(point.getUID());
+                                    await relation.changeSrcOnRuntime(relation.unit.getSrcId());
                                 }
                                 pressedUnit = self.$refs[point.getUID()].$el;
                             } else if(line.options.isInfoToEnum) {
@@ -794,7 +795,7 @@ import { Helpers } from '../assets/js/Helpers';
             border-style: dashed;
         }
         &:active {
-            box-shadow: rgba(40, 60, 75, 0.35) 0px 20px 60px;  
+            // box-shadow: rgba(40, 60, 75, 0.35) 0px 20px 60px;  
             -webkit-transform: scale(1.2);
             -moz-transform: scale(1.2);
             -o-transform: scale(1.2);

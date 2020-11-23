@@ -16,6 +16,11 @@ import { Helpers } from '../../assets/js/Helpers';
 
 export default {
     mixins: [Unit],
+    data() {
+        return {
+            relation: null
+        }
+    },
     mounted: function() {   
         /* Position element */
         this.left = this.unit.xpos();
@@ -48,26 +53,37 @@ export default {
 
             
             /* If the Point drops on Item, link relation to the Item */
-            let itemElements = [...document.querySelectorAll('.unit-group__header'),
+            let itemElements = [...document.querySelectorAll('.unit-group'),
                                 ...document.querySelectorAll('.unit-info'),
                                 ...document.querySelectorAll('.unit-relation')];
             let i = itemElements.length;
             while (--i > -1) {
                 if (Helpers.hitTest(itemElements[i], this.$el, 1)) {
                     /* get targeted Info element */
-                    let itemId = itemElements[i].ref;
+                    let itemId = itemElements[i].closest('.unit').ref;
                     let lineId = this.lines[0]; 
                     var line = board.lines.find((l)=> l.id === lineId), relation;
 
-                    if (itemElements[i] === line.src.$el || itemElements[i] === line.dest.$el) {
+                    /* If Point drops on owning Relation */
+                    if (itemElements[i] === line.src.$el.closest('.unit') || itemElements[i] === line.dest.$el.closest('.unit')) {
                         return;
                     }
-                    console.log(line);
+
+
+                    if (!board.$refs[itemId]) {
+                        return;
+                    }
                     if (line.options.isUnitToRelation) {
                         relation = line.dest;
+                        if (relation.groupContainer !== board.$refs[itemId].groupContainer) {
+                            return;
+                        }
                         relation.changeSrcOnRuntime(itemId);
                     } if (line.options.isRelationToUnit) {
                         relation = line.src;
+                        if (relation.groupContainer !== board.$refs[itemId].groupContainer) {
+                            return;
+                        }
                         relation.changeDestOnRuntime(itemId);
                     }
                     return;
@@ -78,18 +94,33 @@ export default {
             let board = this.$parent;
             board.deleteUnitOnRuntime(this.$el.ref);
         },
-  
+
     },
     watch: {
-        lines: function(lines) {
-            if (lines.length === 0) {
+        lines: {
+            handler: function(lines){
                 let board = this.$parent;
-                if (this.groupContainer) {
-                    this.groupContainer.removeItem(this.unit.getUID())
+                if (lines.length === 1) {
+                    let line = board.$refs[lines[0]];
+                    if (line.src.unit.getType() === "Relation") {
+                        this.relation = line.src;
+                    } 
+                    if (line.dest.unit.getType() === "Relation") {
+                        this.relation = line.dest;
+                    }
+                    console.log(this.relation);
                 }
-                board.deleteUnitOnRuntime(this.unit.getUID());     
-            }
+                if (lines.length === 0) {
+                    let board = this.$parent;
+                    if (this.groupContainer) {
+                        this.groupContainer.removeItem(this.unit.getUID())
+                    }
+                    board.deleteUnitOnRuntime(this.unit.getUID());     
+                }
+            },
+            deep: true
         }
+
     },
     computed: {
         transformation () {

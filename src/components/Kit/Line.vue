@@ -84,6 +84,7 @@ export default {
             // let point = this.$el.nextElementSibling.querySelector('.point');
             // let px = this.x4, py = this.y4;
             // point.style.transform = `translate3d(${px}px, ${py}px,0)`;
+            // requestAnimationFrame(this.updateLine);
         },
         // changeSrc(newSrc) {
         //     this.src = newSrc;

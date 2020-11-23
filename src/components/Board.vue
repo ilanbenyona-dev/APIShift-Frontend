@@ -223,7 +223,6 @@ import { Helpers } from '../assets/js/Helpers';
                     for (let index = 0; index < elementArr.length; index++) {
                         const element = elementArr[index].closest(lookup);
                         if (element) {
-                            console.log(element);
                             return element;
                         }
                     }
@@ -234,7 +233,6 @@ import { Helpers } from '../assets/js/Helpers';
                 async function pointerdown_handler(ev) {
                     ev.preventDefault();
 
-                    console.log(ev);
                     var selection = window.getSelection ? window.getSelection() : document.selection ? document.selection : null;
                     if(!selection) selection.empty ? selection.empty() : selection.removeAllRanges();
 
@@ -245,15 +243,18 @@ import { Helpers } from '../assets/js/Helpers';
                     }
 
                     /* Show context menu in click position */
-                    let contextElement = self.$refs['contextmenu'].$el;
-
-                    contextElement.style.transform = 'scale(0)';
+                    let contextMenu = self.$refs['contextmenu'];
+                    if (contextMenu.isActive()) {
+                        contextMenu.deactivate();
+                    }
+                    // contextElement.style.transform = 'scale(0)';
                      
                     if (evCache.length) {
-                        if (evCache[0].isRightClick) {
+                        if (evCache[0].ctrlKey) {
                             remove_event(evCache[0]);
                         }   
                     }
+
 
 
                     // Cache pointer event for multi-pointer interactions
@@ -266,12 +267,12 @@ import { Helpers } from '../assets/js/Helpers';
 
                         // console.log();
                         /* Figure unit,line,connector,board values from the pressed element */
-                        pressedUnit = closest(document.elementsFromPoint(ev.clientX, ev.clientY),".unit");
+                        pressedUnit = closest(document.elementsFromPoint(lastX, lastY),".unit");
                         if (pressedUnit && pressedUnit.classList.contains('placeholder')) 
                             pressedUnit = pressedUnit.parentNode.closest(".unit");
-                        pressedLine = closest(document.elementsFromPoint(ev.clientX, ev.clientY),".line");
-                        pressedConnector = closest(document.elementsFromPoint(ev.clientX, ev.clientY),".connector");
-                        pressedBoard = closest(document.elementsFromPoint(ev.clientX, ev.clientY),"#board");
+                        pressedLine = closest(document.elementsFromPoint(lastX, lastY),".line");
+                        pressedConnector = closest(document.elementsFromPoint(lastX, lastY),".connector");
+                        pressedBoard = closest(document.elementsFromPoint(lastX, lastY),"#board");
 
                         if (pressedUnit) {
                             if (pressedUnit.classList.contains('unit-group') && pressedLine) {
@@ -296,7 +297,12 @@ import { Helpers } from '../assets/js/Helpers';
 
                             switch (self.cursor) {
                                 case 'default':
-                                    self.$refs[unitId].onDragStart();
+                                    if (ev.ctrlKey) {
+                                         self.$refs[pressedUnit.ref].editmode = false;
+                                    }
+                                    else {
+                                        self.$refs[unitId].onDragStart();
+                                    }
                                     break;
                                 case 'delete': 
                                     self.$refs[unitId].onDelete();
@@ -322,7 +328,6 @@ import { Helpers } from '../assets/js/Helpers';
                                     //     line.src.onDelete();
                                     // }
 
-                                    console.log(line.options);
 
                                     // /* Change line destination to new Point */
                                     let relation = line.dest;
@@ -336,8 +341,6 @@ import { Helpers } from '../assets/js/Helpers';
                                     // /* Change line destination to new Point */
                                     let relation = line.src;
                                     await relation.changeDestOnRuntime(point.getUID());
-                                    console.log(line.options);
-
                                 }
                                 pressedUnit = self.$refs[point.getUID()].$el;
                             } else if(line.options.isInfoToEnum) {
@@ -413,7 +416,6 @@ import { Helpers } from '../assets/js/Helpers';
                         }/* Cursor on Board element */
                         else if(pressedBoard) {
                             if (self.cursor === 'addGroup') {
-                                console.log(initialX, initialY);
                                 self.$refs['selection-box'].height += movementY;
                                 self.$refs['selection-box'].width += movementX;
                             }
@@ -432,9 +434,9 @@ import { Helpers } from '../assets/js/Helpers';
                             let scaleBy = curDistance/prevDistance;
                     
                             /* Bound scale from 1.5 to 0.2 */
-                            if (self.scale*scaleBy > 1.5 || self.scale*scaleBy < 0.2) {
-                                return false;
-                            }
+                            // if (self.scale*scaleBy > 1.5 || self.scale*scaleBy < 0.01) {
+                            //     return false;
+                            // }
                             self.unitList.forEach((unitObj)=>{
                                 let unit = self.$refs[unitObj.getUID()];
                                 unit.internalScaleTo(center.x, center.y, scaleBy);
@@ -480,6 +482,24 @@ import { Helpers } from '../assets/js/Helpers';
                         else if (pressedUnit) {
                             let unitId = pressedUnit.ref;
                             self.$refs[unitId].onDragEnd();
+                            
+                            if (ev.ctrlKey && !pressedUnit.closest('.unit-point')) {
+                                /* Show context menu in click position */
+                                let contextMenu = self.$refs['contextmenu'];
+
+                                /* Show contextmenu only on Unit click */
+                                if (pressedUnit.closest('.unit-info') || pressedUnit.closest('.unit-relation') || pressedUnit.closest('.unit-group')) {
+                                    contextMenu.$el.classList.add('relatable');
+                                } else {
+                                    contextMenu.$el.classList.remove('relatable');
+                                }
+                                
+                                // contextMenu.pressedUnit = self.$refs[pressedUnit.ref];
+                                // contextMenu.left = ev.clientX;
+                                // contextMenu.top = ev.clientY;
+                                contextMenu.activate(pressedUnit.ref, ev.clientX, ev.clientY);
+                            }
+                            
                             pressedUnit.classList.remove('dragged');
                         } else if (pressedLine) {
                             const line = self.$refs[pressedLine.ref];
@@ -527,8 +547,6 @@ import { Helpers } from '../assets/js/Helpers';
                     /* Pointer has canceled */
                     el.onpointerup = pointerup_handler;
                     el.onpointercancel = pointerup_handler;
-                    // initUnits();
-                    // initLines();
 
                     /* Zooming on desktop && laptop, tested on chrome and macbook */
                     el.addEventListener('wheel' , (e) => {
@@ -536,8 +554,8 @@ import { Helpers } from '../assets/js/Helpers';
                         if (e.deltaMode > 0) delta *= 100;
 
                         var scaleBy = getScaleMultiplier(delta);
-                        /* Bound scale from 1.5 to 0.2 */
-                        if (self.scale*scaleBy > 1.5 || self.scale*scaleBy < 0.2) {
+                        /* Bound scale from 1.5 to 0.1 */
+                        if (self.scale*scaleBy > 1.5 || self.scale*scaleBy < 0.1) {
                             return false;
                         }
                         /* Apply scale to Units on screen */
@@ -557,25 +575,6 @@ import { Helpers } from '../assets/js/Helpers';
 
                         /* Replace pointer event with contextmenu event */
                         evCache[0] = ev;
-
-                        /* Show context menu in click position */
-                        let contextElement = self.$refs['contextmenu'];
-
-                        let pressedUnit = ev.target.closest('.unit');
-                        /* Show contextmenu only on Unit click */
-                        if (pressedUnit) {
-                            if (pressedUnit.closest('.unit-info') || pressedUnit.closest('.unit-relation')) {
-                                contextElement.$el.classList.add('relatable');
-                            } else {
-                                contextElement.$el.classList.remove('relatable');
-                            }
-                            
-                            contextElement.pressedUnit = self.$refs[pressedUnit.ref];
-                            contextElement.$el.style.top = `${ev.clientY}px`;
-                            contextElement.$el.style.left = `${ev.clientX}px`;
-                            contextElement.$el.style.transform = 'scale(0)';
-                            contextElement.$el.style.transform = 'scale(1)';
-                        }
                     });
 
                     /* Is G button pressed create group of selected units */
@@ -584,7 +583,6 @@ import { Helpers } from '../assets/js/Helpers';
                             let unitElements = Array.from(document.querySelectorAll('.selected'));
                             if (unitElements.length) {
                                 let group = new Group(unitElements.map(unit=>unit.ref));
-
                                 self.addUnitOnRuntime(group);
                             }
                         }
@@ -602,6 +600,8 @@ import { Helpers } from '../assets/js/Helpers';
                 this.$refs[newUnit.getUID()].internalScaleTo(-1,-1,this.scale);
                 boardStore.setUnitList(this.unitList);
                 boardStore.setScale(this.scale);
+
+                console.log(this.unitList);
             },
             async deleteUnitOnRuntime(unitId) {
                 this.unitList = this.unitList.filter(u => u.getUID() !== unitId);
@@ -767,7 +767,7 @@ import { Helpers } from '../assets/js/Helpers';
         display: block;
         width: 100%;
         height: 100%;
-        z-index: 500;
+        z-index: 999;
     }
     .units {
         position: absolute;
@@ -794,7 +794,7 @@ import { Helpers } from '../assets/js/Helpers';
             border-style: dashed;
         }
         &:active {
-            // box-shadow: rgba(40, 60, 75, 0.35) 0px 20px 60px;  
+            box-shadow: rgba(40, 60, 75, 0.35) 0px 20px 60px;  
             -webkit-transform: scale(1.2);
             -moz-transform: scale(1.2);
             -o-transform: scale(1.2);

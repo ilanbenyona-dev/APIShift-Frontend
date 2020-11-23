@@ -1,5 +1,5 @@
 <template>
-    <div class="contextmenu" @click="close">
+    <div class="contextmenu" @click="deactivate" :style="transformation">
         <ul>
             <li class="item edit" @click="editunit"> Edit</li>
             <li class="item duplicate" @click="duplicateunit"> Duplicate</li>
@@ -27,40 +27,59 @@ export default {
     },
     data: function(){
         return {
-            pressedUnit: null,
+            unitRef: null,
+            left: 0,
+            top: 0,
+            scale: 0
         }
     },
     methods: {
+        activate(unitRef, left, top) {
+            this.unitRef = unitRef;
+            this.left = left;
+            this.top = top;
+            this.scale = 1;
+        },
+        deactivate() {
+            this.scale = 0;
+            this.unitRef = null;
+        },
+        isActive() {
+            return this.scale === 1;
+        },
         editunit() {
-            this.pressedUnit.editmode = true;
+            let unit = this.$parent.$refs[this.unitRef];
+            // console.log(unit);
+            unit.editmode = true;
         },
         duplicateunit() {
-            let srcUnit = this.pressedUnit.unit;
+            let pressedUnit = this.$parent.$refs[this.unitRef];
             let unit;
+            
 
-
-            switch (srcUnit.getType()) {
+            switch (pressedUnit.unit.getType()) {
                 case 'Type':
-                    unit = new Type(this.pressedUnit.left, this.pressedUnit.top ,srcUnit.getText());
+                    unit = new Type(pressedUnit.left, pressedUnit.top ,pressedUnit.unit.getText());
                     break;
                 case 'Enum':
-                    unit = new Enum(this.pressedUnit.left,this.pressedUnit.top, srcUnit.getText());
+                    unit = new Enum(pressedUnit.left, pressedUnit.top, pressedUnit.unit.getText());
                     break;
                 case 'Info':
-                    unit = new Info(this.pressedUnit.left,this.pressedUnit.top,srcUnit.getText());
+                    unit = new Info(pressedUnit.left, pressedUnit.top,pressedUnit.unit.getText());
                     break;
                 case 'Relation':
-                    unit = new Relation(srcUnit.getSrcId(), srcUnit.getDestId(), srcUnit.getRelationType(), srcUnit.getText());
+                    unit = new Relation(pressedUnit.unit.getSrcId(), pressedUnit.unit.getDestId(), pressedUnit.unit.getRelationType(), pressedUnit.unit.getText());
                     break;
             }
             this.$parent.addUnitOnRuntime(unit);
         },
         deleteunit() {
-            this.pressedUnit.onDelete();
+            let unit = this.$parent.$refs[this.unitRef];
+            unit.onDelete();
         },
         // 'chevron-svg': Chevron
         createRelation: function(relationType) {
-            if (!this.pressedUnit) {
+            if (!this.unitRef) {
                 return;
             }
             let type = null;
@@ -75,13 +94,17 @@ export default {
             }
 
             
-            console.log(this.pressedUnit);
-            this.$parent.createRelation(this.pressedUnit.$el.ref, null, type);
-        },
-        close() {
-            console.log(this.$el.style.scale);
-            this.$el.style.transform = 'scale(0)';
-        }   
+            this.$parent.createRelation(this.unitRef, null, type);
+        }
+    },
+    computed: {
+        transformation: function () {
+            return {
+                left: `${this.left}px`,
+                top: `${this.top}px`,
+                transform: `scale(${this.scale})`,
+            }
+        }
     }
 }
 </script>
@@ -92,13 +115,13 @@ export default {
         z-index: 9999;
         width: 150px;
         background:#1b1a1a;
-        border-radius:5px;
-        transform:scale(0);
-        transform-origin:top left;
-        transition:transform 300ms ease-in-out;
+        border-radius: 5px;
+        transform: scale(0);
+        transform-origin: top left;
+        transition: transform 300ms ease-in-out;
 
         &.active {
-            transition:transform 300ms ease-in-out;
+            transition: transform 300ms ease-in-out;
         }
     
             

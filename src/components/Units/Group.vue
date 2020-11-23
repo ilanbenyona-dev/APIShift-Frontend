@@ -16,6 +16,7 @@
 
 <script>
 import Unit from '../Unit';
+import {Point} from '../../assets/js/unit-classes';
 
 export default {
     mixins: [Unit],
@@ -52,9 +53,9 @@ export default {
         
         this.handleEditLogic();
     },
-    updated: function() {
-        console.log(this.editmode);
-    },
+        // updated: function() {
+        //     console.log(this.editmode);
+        // },
     methods: {
         /* Move unit */
         moveBy: function() { 
@@ -87,27 +88,46 @@ export default {
         onDragEnd: function() {
             // this.$emit('unitdragend');
         },
-        onDelete: function () {
+        onDelete: async function () {
             let board = this.$parent;
-            
-            for (let index = 0; index < this.containedUnits.length; index++) {
-                const unit = this.containedUnits[index];
-                unit.groupContainer = null;
+            var x,y,point, elRect = this.$el.getBoundingClientRect();
+
+            x = this.left + elRect.width/2 - 10*this.scale;
+            y = this.top + elRect.height/2 - 10*this.scale;
+            point = new Point(x,y,this.unit.getType());
+
+
+            for (const lineId of this.lines) {
+                let line = board.$refs[lineId];
+
+                /* Detach connected relations upon deletion */
+                if (line.src.unit.getType() === "Relation") {
+                    if (line.src.unit.getDestId() === this.unit.getUID()) {
+                        await board.addUnitOnRuntime(point);
+                        // setTimeout(()=>line.src.changeDestOnRuntime(point.getUID()),0);
+                        line.src.changeDestOnRuntime(point.getUID());
+                    } else {
+                        board.deleteLineOnRuntime(lineId);
+                    }
+                }
+                else if (line.dest.unit.getType() === "Relation") {
+                    if (line.dest.unit.getSrcId() === this.unit.getUID()) {
+                        await board.addUnitOnRuntime(point);
+                        line.dest.changeSrcOnRuntime(point.getUID());
+                    } else {
+                        board.deleteLineOnRuntime(lineId);
+                    }
+                }
+                    // board.deleteLineOnRuntime(lineId);
             }
 
-            for (let i = 0; i < this.lines.length; i++) {
-                const lineId = this.lines[i];
-                const line = board.$refs[lineId];
-                if (line) {
-                    /* If line is from Relation , delete relation */
-                    if (line.options.isRelationToUnit) {
-                        line.src.onDelete();
-                    }
-                 } 
-                board.deleteLineOnRuntime(lineId);
-                
+            if (this.groupContainer) {
+                this.groupContainer.removeItem(this.unit.getUID())
             }
-            board.deleteUnitOnRuntime(this.$el.ref);
+
+            
+            console.log(board.unitList);
+            board.deleteUnitOnRuntime(this.$el.ref);                
         },
         addItem(itemId) {
             this.unit.addItem(itemId);

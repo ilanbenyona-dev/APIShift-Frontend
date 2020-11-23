@@ -24,6 +24,7 @@ export default {
             originalTop: 0,
             originalLeft: 0,
             containedTypes: [],
+            linkedItem: null,
         }
     },
     mounted: function() {
@@ -72,15 +73,24 @@ export default {
             }
             if (!infoHitted) this.$el.classList.remove('highlight');
         },
-        onDragEnd: function() {
+        onDragEnd: async function() {
+            
+            // Handle dragend event on parent board
+            this.$el.dispatchEvent(new Event('unitdragend'));
+
+            // if (this.linkedItem) {
+                
+            // }
             /* If the element over Info element, link Info element */
-            let infoElements = document.querySelectorAll('.unit-info');
+            let infoElements = [...document.querySelectorAll('.unit-info'),]
+                                //...document.querySelectorAll('.unit-relation'),]
+                                // ...document.querySelectorAll('.unit-group')];
             let i = infoElements.length;
             while (--i > -1) {
                 if (Helpers.hitTest(infoElements[i], this.$el, 1)) {
-                    /* get targeted Info element */
-                    let infoId = infoElements[i].ref
-                    let targetedInfo = this.$parent.$refs[infoId];
+                    /* get targeted Item element */
+                    let itemId = infoElements[i].ref
+                    let targetedItem = this.$parent.$refs[itemId];
                     
                     /* Move Enum to original position on UI level */
                     this.left = this.originalLeft;
@@ -89,13 +99,14 @@ export default {
                     this.alignItems();
 
                     /* If targeted Info already linked, dont connect*/
-                    if(targetedInfo.getEnumId()) {
+                    if(targetedItem.getEnumId()) {
                         break;
                     }
+                    /* Link Item with Enum on UI level (view) */
+                    await this.$parent.addLineOnRuntime(itemId, this.unit.getUID(), { isInfoToEnum: true });
 
-                    /* Link targeted Info with Enum */ // TODO: check for already linked Enum
-                    targetedInfo.setEnumId(this.unit.getUID());
-                    targetedInfo.drawLineToEnum(this.unit.getUID());
+                    /* Link Item with Enum on Data level (model) */
+                    targetedItem.setEnumId(this.unit.getUID());
                     return;
                 }
                 this.$el.classList.remove('highlight');
@@ -103,8 +114,6 @@ export default {
             // TODO: just in case, maybe unnecessary
             this.alignItems();
         
-            // Handle dragend event on parent board
-            this.$el.dispatchEvent(new Event('unitdragend'));
         },
         onDelete() {
             let board = this.$parent;

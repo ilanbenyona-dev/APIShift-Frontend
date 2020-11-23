@@ -3,7 +3,7 @@
 export default {
     mounted: function() {
         let self = this;
-        console.log(this.$el);
+
         /* Every unit element has a ref attribute in the DOM as a unique id */
         this.$el.ref = this.unit.getUID();
         this.text = this.unit.getText();
@@ -101,6 +101,7 @@ export default {
         transformation () {
             return {
                 transform: `translate3d(${this.left}px,${this.top}px, 0) scale(${this.scale})`,
+                // zIndex: this.zIndex,
                 fontSize: 13+ 'px'
             }
         }

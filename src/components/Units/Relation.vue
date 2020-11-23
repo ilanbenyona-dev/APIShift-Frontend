@@ -165,6 +165,11 @@ export default {
             const board = this.$parent;
             const destItem = board.$refs[this.unit.getDestId()];
 
+            console.log(this.unit.getDestId());
+            
+            if (!destItem) {
+                return;
+            }
             /* If line already connected to point - delete it */
             if (destItem.unit.getType() === "Point") {
                 destItem.onDelete();
@@ -183,8 +188,11 @@ export default {
             
             /* Change relation dest on Data level (model) */
             this.unit.setDestId(newDest);
+
+            console.log(this.unit.getDestId());
+
         },
-        async changeSrcOnRuntime(newSrc, ) {
+        async changeSrcOnRuntime(newSrc) {
             const board = this.$parent;
             const srcItem = board.$refs[this.unit.getSrcId()];
 
@@ -207,9 +215,6 @@ export default {
             /* Change relation dest on Data level (model) */
             this.unit.setSrcId(newSrc);
         },
-        setSrcId(srcId) {
-            this.unit.setSrcId(srcId);
-        }
     },
     props: {
         isBoardRendered: {
@@ -223,12 +228,12 @@ export default {
 
         },
         lines: function(lines) {
+            let board = this.$parent;
             if (lines.length === 0) {
-                let board = this.$parent;
                 if (this.groupContainer) {
                     this.groupContainer.removeItem(this.unit.getUID())
                 }
-                board.deleteUnitOnRuntime(this.unit.getUID());     
+                board.deleteUnitOnRuntime(this.unit.getUID());   
             }
         }
     }

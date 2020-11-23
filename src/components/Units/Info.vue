@@ -4,7 +4,7 @@
             <div class="unit-info__header__text single-line input"
             :contenteditable="editmode"
             @keydown="keydown">
-                {{lines}}
+                {{unit.getUID()}}
             </div>  
             <div class="unit-info__header__type">I</div>
         </div>
@@ -50,7 +50,11 @@ export default {
             this.$el.dispatchEvent(new Event('unitdragstart'));
             
             /* Move the element upwards */
-            this.$el.style.zIndex = this.zIndex - 500;
+            this.$el.style.zIndex = this.zIndex;
+
+            if (this.groupContainer) {
+                this.$el.style.zIndex -= 500;
+            }
 
             /* If we are during a relation linkage process */
             if (document.body.style.cursor === 'cell') {

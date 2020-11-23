@@ -318,8 +318,9 @@ import { Helpers } from '../assets/js/Helpers';
                             pressedLine = pressedLine.querySelector('path');
                             const line = self.$refs[pressedLine.ref];
                             if (line.options.isUnitToRelation || line.options.isRelationToUnit) {
-                                let line = self.lines.find((l) => l.id === pressedLine.ref);
+                                // let line = self.lines.find((l) => l.id === pressedLine.ref);
                                 let point = new Point(ev.clientX - 10*self.scale,ev.clientY - 10*self.scale);
+                                console.log(ev, point);
                                 await self.addUnitOnRuntime(point);
 
                                 if (line.options.isUnitToRelation) {                                    
@@ -328,11 +329,13 @@ import { Helpers } from '../assets/js/Helpers';
                                     //     line.src.onDelete();
                                     // }
 
-
                                     // /* Change line destination to new Point */
                                     let relation = line.dest;
+                                    if (relation.unit.getSrcId() === relation.unit.getDestId()) {
+                                        await relation.changeDestOnRuntime(relation.unit.getDestId());
+                                    }
                                     await relation.changeSrcOnRuntime(point.getUID());
-                                    await relation.changeDestOnRuntime(relation.unit.getDestId());
+                                    // await relation.changeDestOnRuntime(relation.unit.getDestId());
                                 } else if (line.options.isRelationToUnit) {
                                     /* If line already connected to point - delete it */
                                     // if(line.dest.unit.getType() === 'Point') {
@@ -340,8 +343,11 @@ import { Helpers } from '../assets/js/Helpers';
                                     // }
                                     // /* Change line destination to new Point */
                                     let relation = line.src;
+                                    if (relation.unit.getSrcId() === relation.unit.getDestId()) {
+                                        await relation.changeSrcOnRuntime(relation.unit.getSrcId());
+                                    }
                                     await relation.changeDestOnRuntime(point.getUID());
-                                    await relation.changeSrcOnRuntime(relation.unit.getSrcId());
+                                    // await relation.changeSrcOnRuntime(relation.unit.getSrcId());
                                 }
                                 pressedUnit = self.$refs[point.getUID()].$el;
                             } else if(line.options.isInfoToEnum) {
@@ -630,12 +636,6 @@ import { Helpers } from '../assets/js/Helpers';
 
                 src.pushLine(uid);
                 dest.pushLine(uid);
-                // // this.pushLine(line2);
-                // // srcUnit.pushLine(line1);    
-                // // destUnit.pushLine(line2);
-
-                // console.log(this.lines);
-                // return uid;
             },  
             async deleteLineOnRuntime(lineId) {
                 this.lines = this.lines.filter((l)=>{ 
@@ -768,7 +768,7 @@ import { Helpers } from '../assets/js/Helpers';
         display: block;
         width: 100%;
         height: 100%;
-        z-index: 999;
+        z-index: 500;
     }
     .units {
         position: absolute;

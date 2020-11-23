@@ -17,7 +17,7 @@
 
 <script>
 
-import { Relation, Type, Enum, Info } from '../../assets/js/unit-classes';
+import { Relation, Type, Enum, Info, Point } from '../../assets/js/unit-classes';
 import { Constants } from '../../assets/js/Helpers';
 
 /* TODO: add icons to items from a CDN or something */
@@ -52,9 +52,9 @@ export default {
             // console.log(unit);
             unit.editmode = true;
         },
-        duplicateunit() {
+        async duplicateunit() {
             let pressedUnit = this.$parent.$refs[this.unitRef];
-            let unit;
+            let unit, board=this.$parent;
             
 
             switch (pressedUnit.unit.getType()) {
@@ -68,7 +68,30 @@ export default {
                     unit = new Info(pressedUnit.left, pressedUnit.top,pressedUnit.unit.getText());
                     break;
                 case 'Relation':
-                    unit = new Relation(pressedUnit.unit.getSrcId(), pressedUnit.unit.getDestId(), pressedUnit.unit.getRelationType(), pressedUnit.unit.getText());
+                    var srcItem = board.$refs[pressedUnit.unit.getSrcId()];
+                    var destItem = board.$refs[pressedUnit.unit.getDestId()];
+                    var pointSrc, pointDest;
+
+                    if (destItem.unit.getType() === "Point" && srcItem.unit.getType() === "Point") {
+                        pointSrc = new Point(srcItem.left, srcItem.top)
+                        await board.addUnitOnRuntime(pointSrc);
+                        pointDest = new Point(destItem.left, destItem.top)
+                        await board.addUnitOnRuntime(pointDest);
+                        unit = new Relation(pointSrc.getUID(), pointDest.getUID(), pressedUnit.unit.getRelationType(), pressedUnit.unit.getText());
+                    }
+                    else if (srcItem.unit.getType() === "Point") {
+                        pointSrc = new Point(srcItem.left, srcItem.top)
+                        await board.addUnitOnRuntime(pointSrc);
+                        unit = new Relation(pointSrc.getUID(), pressedUnit.unit.getDestId(), pressedUnit.unit.getRelationType(), pressedUnit.unit.getText());
+                    }
+                    else if (destItem.unit.getType() === "Point") {
+                        pointDest = new Point(destItem.left, destItem.top)
+                        await board.addUnitOnRuntime(pointDest);
+                        unit = new Relation(pressedUnit.unit.getSrcId(), pointDest.getUID(), pressedUnit.unit.getRelationType(), pressedUnit.unit.getText());
+                    }
+                    else if (!pointDest && !pointDest) {
+                        unit = new Relation(pressedUnit.unit.getSrcId(), pressedUnit.unit.getDestId(), pressedUnit.unit.getRelationType(), pressedUnit.unit.getText());
+                    }
                     break;
             }
             this.$parent.addUnitOnRuntime(unit);

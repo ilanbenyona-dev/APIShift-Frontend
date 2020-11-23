@@ -72,16 +72,30 @@ export default {
         onDragStart: function() {
             // Update global z-index and future values 
             // this.$emit('unitdragstart');
+            
+            /* Update global z-index and future values */
+            this.$el.dispatchEvent(new Event('unitdragstart'));
+            
+            /* Move the element upwards */
+            // this.groupZindex= this.zIndex - 1000;
 
         },
         onDrag: function (dx,dy) {
-            
+            let board = this.$parent;
             // this.left += dx;
             // this.top += dy;
 
             this.containedUnits.forEach((unit) => {
                 unit.left += dx;
                 unit.top += dy;
+                if (unit.unit.getType() ===  "Relation") {
+                    if (board.$refs[unit.unit.getSrcId()].unit.getType() === "Point") {
+                        board.$refs[unit.unit.getSrcId()].moveBy(dx,dy);
+                    }
+                    if (board.$refs[unit.unit.getDestId()].unit.getType() === "Point") {
+                        board.$refs[unit.unit.getDestId()].moveBy(dx,dy);
+                    }
+                }
                 // console.log(unit);
             });
         },

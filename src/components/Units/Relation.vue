@@ -3,7 +3,7 @@
         <div class="unit-relation__header">
             <div class="unit-relation__header__text single-line input"
             :contenteditable="editmode"
-            @keydown="keydown">{{lines}}</div>                 
+            @keydown="keydown">{{unit.getSrcId()+' '+unit.getDestId()}}</div>                 
             <div class="unit-relation__header__type">R</div>
         </div>
         <div class="connector">
@@ -59,6 +59,10 @@ export default {
 
             /* Move the element upwards */
             this.$el.style.zIndex = this.zIndex;
+
+            if (this.groupContainer) { 
+                this.$el.style.zIndex -= 500;
+            }
         },
         onDrag: function (dx,dy) {
             // var board = this.$parent;

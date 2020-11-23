@@ -51,12 +51,16 @@ export default {
             // }
             this.bezierWeight = 0.7;
         }
-        self.updateLine();
+
+        let updateOften = function() {
+            requestAnimationFrame(self.updateLine);
+        }
+        requestAnimationFrame(updateOften);
 
         // TODO: It can be removed - not critical
-        setInterval(() => {
-            self.updateLine();
-        }, 100);
+        // setInterval(() => {
+        //     self.updateLine();
+        // }, 100);
     },
     data: function() {
         return {

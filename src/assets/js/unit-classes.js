@@ -52,7 +52,27 @@ class Unit {
     }
 }
 
-class Relation extends Unit {
+class Item extends Unit {
+    constructor( x, y, text, objectStr) {
+        super( x, y, text, objectStr);
+        if (objectStr) {
+            let obj = objectStr;
+            this._enumId = obj._enumId;
+            return;
+        }
+        this._enumId = null;
+        this._type = "Item";
+    }
+
+    setEnumId(unit) {
+        this._enumId = unit;
+    }
+    getEnumId() {
+        return this._enumId;
+    }
+}
+
+class Relation extends Item {
     constructor(src, dest, relationType, text, objectStr) {
         super( 0, 0, text, objectStr);
         if (objectStr) {
@@ -97,30 +117,16 @@ class Relation extends Unit {
 class Point extends Unit {
     constructor( x, y, prevType, objectStr) {
         super( x, y, null, objectStr);
-        this._type = "Point";
-        this._prevType = null;
-    }
-    // _prevType = null;
-}
 
-class Info extends Unit {
-    constructor( x, y, text, objectStr) {
-        super( x, y, text, objectStr);
         if (objectStr) {
-            let obj = objectStr;
-            this._enumId = obj._enumId;
+            this._type = objectStr._type;
+            this._prevType = objectStr._prevType;
             return;
         }
-        this._enumId = null;
-        this._type = "Info";
+        this._type = "Point";
+        this._prevType = prevType;
     }
-
-    setEnumId(unit) {
-        this._enumId = unit;
-    }
-    getEnumId() {
-        return this._enumId;
-    }
+    // _prevType = null;
 }
 
 class Type extends Unit {
@@ -172,7 +178,7 @@ class Enum extends Unit {
     }
 }
 
-class Group extends Unit {
+class Group extends Item {
     constructor( contains, text, objectStr) {
         super(0,0,text, objectStr);
         if (objectStr) {
@@ -207,8 +213,8 @@ class UnitSerializer {
         return JSON.stringify(serilized);
     }
     static deserialize(unit) {
-        if (unit._type === "Info") {
-            return new Info(0,0,0, unit);
+        if (unit._type === "Item") {
+            return new Item(0,0,0, unit);
         }
         if (unit._type === "Enum") {
             return new Enum(0,0,0,unit);
@@ -229,4 +235,4 @@ class UnitSerializer {
     }
 }
 
-export { Unit, Info, Type, Enum, Relation, Point, Group, UnitSerializer };
+export { Unit, Item, Type, Enum, Relation, Point, Group, UnitSerializer };

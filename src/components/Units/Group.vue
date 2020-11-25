@@ -135,12 +135,12 @@ export default {
                     // board.deleteLineOnRuntime(lineId);
             }
 
-            if (this.groupContainer) {
-                this.groupContainer.removeItem(this.unit.getUID())
-            }
 
-            
-            console.log(board.unitList);
+            for (const item of this.containedUnits) {
+                if (item.groupContainer) {
+                    item.groupContainer = null;
+                }
+            }
             board.deleteUnitOnRuntime(this.$el.ref);                
         },
         addItem(itemId) {

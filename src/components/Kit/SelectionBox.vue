@@ -11,7 +11,7 @@ export default {
     mounted: function() {
         let self = this;
         let board = document.querySelector('#board');
-        this.itemElements = [...board.querySelectorAll('.unit-info'),
+        this.itemElements = [...board.querySelectorAll('.unit-item'),
                              ...board.querySelectorAll('.unit-relation'),
                              ...board.querySelectorAll('unit-point')]; 
         this.itemElements = this.itemElements.filter((item) => {

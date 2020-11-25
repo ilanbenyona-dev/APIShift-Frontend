@@ -13,7 +13,7 @@ export default {
     },
     computed: {
         getComputedRadius() {
-            return 10*this.scale;
+            return 5*this.scale;
         }
     }
 }

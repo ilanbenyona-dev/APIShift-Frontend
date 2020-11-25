@@ -52,14 +52,14 @@
             </template>             
             <template v-for="(unit) in unitList"
                 :key="unit._id">
-                <info-unit class="unit" v-if="unit._type === 'Info' && renderKey >= 2"
+                <item-unit class="unit" v-if="unit._type === 'Item' && renderKey >= 2"
                     :ref="unit._id"
                     :unit="unit"
                     :zIndex="zIndex"
                     @unitdragstart="zIndexUpdate"
                     @unitdragend="unitdragend"
                     style="width: auto; height: auto;">
-                </info-unit>
+                </item-unit>
             </template> 
             <template v-for="(unit) in unitList"
                 :key="unit._id">
@@ -112,7 +112,7 @@
 <script>
     // import Selection from "@simonwep/selection-js";
     import { boardStore } from "../store/board";
-    import InfoUnit from './Units/Info';
+    import ItemUnit from './Units/Item';
     import TypeUnit from './Units/Type';
     import EnumUnit from './Units/Enum';
     import RelationUnit from './Units/Relation';
@@ -137,7 +137,7 @@ import { Helpers } from '../assets/js/Helpers';
     export default {
         components: {
             /* Unit components  */
-            'info-unit':InfoUnit,
+            'item-unit':ItemUnit,
             'type-unit':TypeUnit,
             'enum-unit':EnumUnit,
             'relation-unit':RelationUnit,
@@ -181,7 +181,7 @@ import { Helpers } from '../assets/js/Helpers';
             await this.$nextTick();
 
             // Render Units by dependency order, from least to most. 
-            // Types -> Enums -> Infos -> Relations 
+            // Types -> Enums -> Items -> Relations 
             for (let index = 0; index < 6; index++) {
                 setTimeout(() => {
                     self.renderKey++;
@@ -274,6 +274,7 @@ import { Helpers } from '../assets/js/Helpers';
                         pressedConnector = closest(document.elementsFromPoint(lastX, lastY),".connector");
                         pressedBoard = closest(document.elementsFromPoint(lastX, lastY),"#board");
 
+                        /* If line is clicked inside group, make the line count */
                         if (pressedUnit) {
                             if (pressedUnit.classList.contains('unit-group') && pressedLine) {
                                 pressedUnit = null;
@@ -309,7 +310,7 @@ import { Helpers } from '../assets/js/Helpers';
                                     break;
                                 case 'linkage':
                                     // console.log(pressedUnit.classList);
-                                    if (pressedUnit.classList.contains('unit-info') || pressedUnit.classList.contains('unit-group') || pressedUnit.classList.contains('unit-relation')) {
+                                    if (pressedUnit.classList.contains('unit-item') || pressedUnit.classList.contains('unit-group') || pressedUnit.classList.contains('unit-relation')) {
                                         self.createRelation(null,unitId, self.relateType);                                    
                                     }
                                     break;
@@ -317,17 +318,16 @@ import { Helpers } from '../assets/js/Helpers';
                         } else if (pressedLine) {
                             pressedLine = pressedLine.querySelector('path');
                             const line = self.$refs[pressedLine.ref];
+                            let point;
+
                             if (line.options.isUnitToRelation || line.options.isRelationToUnit) {
                                 // let line = self.lines.find((l) => l.id === pressedLine.ref);
-                                let point = new Point(ev.clientX - 10*self.scale,ev.clientY - 10*self.scale);
-                                console.log(ev, point);
-                                await self.addUnitOnRuntime(point);
-
-                                if (line.options.isUnitToRelation) {                                    
-                                    /* If line already connected to point - delete it */
-                                    // if(line.src.unit.getType() === 'Point') {
-                                    //     line.src.onDelete();
-                                    // }
+                                    
+                                if (line.options.isUnitToRelation) {      
+                                    const pointType = line.src.unit._prevType || line.src.unit.getType();
+                                    console.log(pointType);
+                                    point = new Point(ev.clientX - 10*self.scale,ev.clientY - 10*self.scale, pointType);
+                                    await self.addUnitOnRuntime(point);
 
                                     // /* Change line destination to new Point */
                                     let relation = line.dest;
@@ -337,10 +337,10 @@ import { Helpers } from '../assets/js/Helpers';
                                     await relation.changeSrcOnRuntime(point.getUID());
                                     // await relation.changeDestOnRuntime(relation.unit.getDestId());
                                 } else if (line.options.isRelationToUnit) {
-                                    /* If line already connected to point - delete it */
-                                    // if(line.dest.unit.getType() === 'Point') {
-                                    //     line.dest.onDelete();
-                                    // }
+                                    const pointType = line.dest.unit._prevType || line.dest.unit.getType();
+                                    point = new Point(ev.clientX - 10*self.scale,ev.clientY - 10*self.scale, pointType);
+                                    await self.addUnitOnRuntime(point);
+                                    
                                     // /* Change line destination to new Point */
                                     let relation = line.src;
                                     if (relation.unit.getSrcId() === relation.unit.getDestId()) {
@@ -494,8 +494,8 @@ import { Helpers } from '../assets/js/Helpers';
                                 /* Show context menu in click position */
                                 let contextMenu = self.$refs['contextmenu'];
 
-                                /* Show contextmenu only on Unit click */
-                                if (pressedUnit.closest('.unit-info') || pressedUnit.closest('.unit-relation') || pressedUnit.closest('.unit-group')) {
+                                /* Show relatable contextmenu only on Unit context click */
+                                if (pressedUnit.closest('.unit-item') || pressedUnit.closest('.unit-relation') || pressedUnit.closest('.unit-group')) {
                                     contextMenu.$el.classList.add('relatable');
                                 } else {
                                     contextMenu.$el.classList.remove('relatable');
@@ -575,7 +575,7 @@ import { Helpers } from '../assets/js/Helpers';
                         boardStore.setScale(self.scale);
                     });
 
-                    // TODO: Maybe move it to Info/Enum elements
+                    // TODO: Maybe move it to Item/Enum elements
                     el.addEventListener('contextmenu', (ev)=> {
                         ev.preventDefault();
                         ev.isRightClick = true;

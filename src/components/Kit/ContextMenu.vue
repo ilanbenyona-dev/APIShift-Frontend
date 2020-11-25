@@ -17,7 +17,7 @@
 
 <script>
 
-import { Relation, Type, Enum, Info, Point } from '../../assets/js/unit-classes';
+import { Relation, Type, Enum, Item, Point } from '../../assets/js/unit-classes';
 import { Constants } from '../../assets/js/Helpers';
 
 /* TODO: add icons to items from a CDN or something */
@@ -64,8 +64,8 @@ export default {
                 case 'Enum':
                     unit = new Enum(pressedUnit.left, pressedUnit.top, pressedUnit.unit.getText());
                     break;
-                case 'Info':
-                    unit = new Info(pressedUnit.left, pressedUnit.top,pressedUnit.unit.getText());
+                case 'Item':
+                    unit = new Item(pressedUnit.left, pressedUnit.top,pressedUnit.unit.getText());
                     break;
                 case 'Relation':
                     var srcItem = board.$refs[pressedUnit.unit.getSrcId()];

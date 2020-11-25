@@ -54,7 +54,7 @@ export default {
             
             /* If the Point drops on Item, link relation to the Item */
             let itemElements = [...document.querySelectorAll('.unit-group'),
-                                ...document.querySelectorAll('.unit-info'),
+                                ...document.querySelectorAll('.unit-item'),
                                 ...document.querySelectorAll('.unit-relation')];
             let i = itemElements.length;
             while (--i > -1) {
@@ -63,6 +63,7 @@ export default {
                     let itemId = itemElements[i].closest('.unit').ref;
                     let lineId = this.lines[0]; 
                     var line = board.lines.find((l)=> l.id === lineId), relation;
+                    var targetItem = board.$refs[itemId];
 
                     /* If Point drops on owning Relation */
                     if (itemElements[i] === line.src.$el.closest('.unit') || itemElements[i] === line.dest.$el.closest('.unit')) {
@@ -70,20 +71,31 @@ export default {
                     }
 
 
-                    if (!board.$refs[itemId]) {
-                        return;
-                    }
+
+                    // if (!board.$refs[itemId].unit.getType() === "Relation" && (itemId === ) {
+                    //     return;
+                    // }
                     if (line.options.isUnitToRelation) {
                         relation = line.dest;
                         if (relation.groupContainer !== board.$refs[itemId].groupContainer) {
                             return;
                         }
+                        if (targetItem.unit.getType() === "Relation") {
+                            if (targetItem.unit.getDestId() === relation.unit.getUID()) {
+                                return;
+                            }
+                        } 
                         relation.changeSrcOnRuntime(itemId);
                     } if (line.options.isRelationToUnit) {
                         relation = line.src;
                         if (relation.groupContainer !== board.$refs[itemId].groupContainer) {
                             return;
                         }
+                        if (targetItem.unit.getType() === "Relation") {
+                            if (targetItem.unit.getSrcId() === relation.unit.getUID()) {
+                                return;
+                            }
+                        } 
                         relation.changeDestOnRuntime(itemId);
                     }
                     return;

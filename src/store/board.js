@@ -1,11 +1,11 @@
 import { PersistentStore } from './index';
 import { BOARD_STORE_NAME } from './store-names';
-import { Info, Enum, Type ,UnitSerializer} from '../assets/js/unit-classes';
+import { Item, Enum, Type ,UnitSerializer} from '../assets/js/unit-classes';
 
 class BoardStore extends PersistentStore {
     data() {
         return {
-            unitList: [new Info(100,100, "lol"), new Enum(200,200, "lol"),new Type(400,100, "lol") ,new Info(100, 500, "lol")],
+            unitList: [new Item(100,100, "lol"), new Enum(200,200, "lol"),new Type(400,100, "lol") ,new Item(100, 500, "lol")],
             lineList: [],
             scale: 1
         }

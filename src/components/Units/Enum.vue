@@ -61,17 +61,17 @@ export default {
             this.alignItems();
 
             /* If the element over Info element, highlight, else remove  */
-            let infoElements = document.querySelectorAll('.unit-info');
-            let i = infoElements.length;
-            let infoHitted = false;
+            let itemElements = document.querySelectorAll('.unit-item');
+            let i = itemElements.length;
+            let itemHitted = false;
             while (--i > -1) {
-                infoHitted = Helpers.hitTest(infoElements[i], this.$el, 1)
-                if (infoHitted) {
+                itemHitted = Helpers.hitTest(itemElements[i], this.$el, 1)
+                if (itemHitted) {
                     this.$el.classList.add('highlight');
                     return;
                 }
             }
-            if (!infoHitted) this.$el.classList.remove('highlight');
+            if (!itemHitted) this.$el.classList.remove('highlight');
         },
         onDragEnd: async function() {
             
@@ -82,14 +82,14 @@ export default {
                 
             // }
             /* If the element over Info element, link Info element */
-            let infoElements = [...document.querySelectorAll('.unit-info'),]
+            let itemElements = [...document.querySelectorAll('.unit-item'),]
                                 //...document.querySelectorAll('.unit-relation'),]
                                 // ...document.querySelectorAll('.unit-group')];
-            let i = infoElements.length;
+            let i = itemElements.length;
             while (--i > -1) {
-                if (Helpers.hitTest(infoElements[i], this.$el, 1)) {
+                if (Helpers.hitTest(itemElements[i], this.$el, 1)) {
                     /* get targeted Item element */
-                    let itemId = infoElements[i].ref
+                    let itemId = itemElements[i].ref
                     let targetedItem = this.$parent.$refs[itemId];
                     
                     /* Move Enum to original position on UI level */
@@ -121,8 +121,8 @@ export default {
             /* Delete connected lines, and update conneted item data */
             this.lines.forEach((lineId) => {
                 let line = board.$refs[lineId];
-                let infoItem = line.src;
-                infoItem.removeLineToEnum();
+                let itemItem = line.src;
+                itemItem.removeLineToEnum();
                 board.deleteLineOnRuntime(lineId);
             });
             

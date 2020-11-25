@@ -69,12 +69,12 @@ export default {
         },
         /* position attached lines */
         updateLines() {
-            let board = this.$parent;
-            for (const lineId of this.lines) {
-                if (board.$refs[lineId]) {
-                    board.$refs[lineId].updateLine();
-                }
-            }
+            // let board = this.$parent;
+            // for (const lineId of this.lines) {
+            //     if (board.$refs[lineId]) {
+            //         board.$refs[lineId].updateLine();
+            //     }
+            // }
         },
         pushLine(lineId) {
             this.lines.push(lineId);

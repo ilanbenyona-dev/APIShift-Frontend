@@ -1,12 +1,12 @@
 <template>
-    <div class="unit-info" :style="transformation">
-        <div class="unit-info__header">
-            <div class="unit-info__header__text single-line input"
+    <div class="unit-item" :style="transformation">
+        <div class="unit-item__header">
+            <div class="unit-item__header__text single-line input"
             :contenteditable="editmode"
             @keydown="keydown">
                 {{unit.getUID()}}
             </div>  
-            <div class="unit-info__header__type">I</div>
+            <div class="unit-item__header__type">I</div>
         </div>
         <div class="connector">
             <div class="connector-left"></div>
@@ -72,16 +72,16 @@ export default {
         },
         onDelete: async function () {
             let board = this.$parent;
-            var x,y,point, elRect = this.$el.getBoundingClientRect();
-
-            x = this.left + elRect.width/2 - 10*this.scale;
-            y = this.top + elRect.height/2 - 10*this.scale;
-            point = new Point(x,y,this.unit.getType());
 
 
             for (const lineId of this.lines) {
                 let line = board.$refs[lineId];
+                var x,y,point, elRect = this.$el.getBoundingClientRect();
 
+                x = this.left + elRect.width/2 - 10*this.scale;
+                y = this.top + elRect.height/2 - 10*this.scale;
+                point = new Point(x,y,this.unit.getType());
+                
                 /* Detach connected relations upon deletion */
                 if (line.src.unit.getType() === "Relation") {
                     if (line.src.unit.getDestId() === this.unit.getUID()) {
@@ -139,7 +139,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-    .unit-info {
+    .unit-item {
         display: flex;
         flex-direction: column;
         border-color: rgb(66, 178, 253); 

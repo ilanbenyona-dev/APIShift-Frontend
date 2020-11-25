@@ -3,7 +3,7 @@
         <div class="unit-relation__header">
             <div class="unit-relation__header__text single-line input"
             :contenteditable="editmode"
-            @keydown="keydown">{{unit.getSrcId()+' '+unit.getDestId()}}</div>                 
+            @keydown="keydown">{{unit.getText()}}</div>                 
             <div class="unit-relation__header__type">R</div>
         </div>
         <div class="connector">
@@ -132,7 +132,13 @@ export default {
             if (this.lines.length >= 2) {
                 return;
             }
-            const isRelationToRelation = srcUnit.unit.getType() === destUnit.unit.getType() && destUnit.unit.getType() === "Relation";
+
+            var isRelationToRelation = false;
+            if (srcUnit.unit._prevType === 'Relation') {
+                isRelationToRelation = 'Relation' === (destUnit.unit._prevType || destUnit.unit.getType())
+            } else if (destUnit.unit._prevType === 'Relation') {
+                isRelationToRelation = 'Relation' === (srcUnit.unit._prevType || srcUnit.unit.getType())
+            }
             const isReverse = srcUnit === destUnit;
 
             await this.$parent.addLineOnRuntime(this.unit.getSrcId(), this.unit.getUID(), 
@@ -141,23 +147,26 @@ export default {
                   isRelationToRelation,
                   isReverse
                 });
-            if (isRelationToRelation) {
-                this.$el.querySelector('.connector-top').classList.add('active');            
-            } else {
-                this.$el.querySelector('.connector-left').classList.add('active');            
-            }
+            // if (isRelationToRelation) {
+            //     this.$el.querySelector('.connector-top').classList.add('active');            
+            // } else {
+            //     this.$el.querySelector('.connector-left').classList.add('active');            
+            // }
 
+            console.log('asd 1');
             await this.$parent.addLineOnRuntime(this.unit.getUID(), this.unit.getDestId(),
                 {isRelationToUnit: true, 
                   relationType: this.unit.getRelationType(),
                   isRelationToRelation,
                   isReverse
                 });
-            if (isRelationToRelation) {
-                this.$el.querySelector('.connector-bottom').classList.add('active');            
-            } else {
-                this.$el.querySelector('.connector-right').classList.add('active');            
-            }
+                console.log('asd 2');
+            this.$forceUpdate();
+            // if (isRelationToRelation) {
+            //     this.$el.querySelector('.connector-bottom').classList.add('active');            
+            // } else {
+            //     this.$el.querySelector('.connector-right').classList.add('active');            
+            // }
 
             // this.pushLine(line1);
             // this.pushLine(line2);
@@ -165,9 +174,10 @@ export default {
             // destUnit.pushLine(line2);
 
         },
-        async changeDestOnRuntime(newDest) {
+        async changeDestOnRuntime(newDestId) {
             const board = this.$parent;
             const destItem = board.$refs[this.unit.getDestId()];
+            const newDest = board.$refs[newDestId];
 
             console.log(this.unit.getDestId());
             
@@ -185,20 +195,24 @@ export default {
 
             /* Change relation dest on UI level (view) */
             await board.deleteLineOnRuntime(lineId);
-            await board.addLineOnRuntime(this.unit.getUID(), newDest, {
+            await board.addLineOnRuntime(this.unit.getUID(), newDestId, {
                 isRelationToUnit: true, 
                 relationType: this.unit.getRelationType(),
+                isRelationToRelation: this.unit.getType() === newDest.unit.getType() || newDest.unit._prevType === "Relation"
             });
             
             /* Change relation dest on Data level (model) */
-            this.unit.setDestId(newDest);
+            this.unit.setDestId(newDestId);
 
             console.log(this.unit.getDestId());
 
         },
-        async changeSrcOnRuntime(newSrc) {
+        async changeSrcOnRuntime(newSrcId) {
             const board = this.$parent;
             const srcItem = board.$refs[this.unit.getSrcId()];
+            const newSrc = board.$refs[newSrcId];
+
+            // const isRelationToRelation = this.unit.getType() === newSrc.unit.getType() || newSrc.unit._prevType === "Relation";
 
             /* If line already connected to point - delete it */
             if (srcItem.unit.getType() === "Point") {
@@ -210,14 +224,15 @@ export default {
 
             /* Change relation dest on UI level (view) */
             await board.deleteLineOnRuntime(lineId);
-            await board.addLineOnRuntime(newSrc, this.unit.getUID(), {
+            await board.addLineOnRuntime(newSrcId, this.unit.getUID(), {
                 isUnitToRelation: true, 
                 relationType: this.unit.getRelationType(),
+                isRelationToRelation: this.unit.getType() === newSrc.unit.getType() || newSrc.unit._prevType === "Relation"
             });
 
             
             /* Change relation dest on Data level (model) */
-            this.unit.setSrcId(newSrc);
+            this.unit.setSrcId(newSrcId);
         },
     },
     props: {
@@ -231,15 +246,53 @@ export default {
             this.mountLines();
 
         },
-        lines: function(lines) {
-            let board = this.$parent;
-            if (lines.length === 0) {
-                if (this.groupContainer) {
-                    this.groupContainer.removeItem(this.unit.getUID())
+        lines: {
+            // immediate: true,
+            handler(lines) {
+                let board = this.$parent;
+                console.log(lines);
+                this.$el.querySelector('.connector-bottom').classList.remove('active');
+                this.$el.querySelector('.connector-top').classList.remove('active');
+                this.$el.querySelector('.connector-right').classList.remove('active');
+                this.$el.querySelector('.connector-left').classList.remove('active');
+
+                for (const lineId of lines) {
+                    let line = board.$refs[lineId];
+                    if (line.src === this) {
+                        if(line.src.unit.getType() === (line.dest.unit._prevType || line.dest.unit.getType())) {
+                            line.options.isRelationToRelation = true;
+                        }
+                    }
+                    if (line.dest === this) {
+                        if(line.dest.unit.getType() === (line.src.unit._prevType || line.src.unit.getType())) {
+                            line.options.isRelationToRelation = true;
+                        }
+                    }
+                    if (line.options.isUnitToRelation && line.dest === this) {
+                        if (line.options.isRelationToRelation) {
+                            this.$el.querySelector('.connector-top').classList.add('active');
+                        } else {
+                            this.$el.querySelector('.connector-left').classList.add('active');
+                        }
+                    } 
+                    else if (line.options.isRelationToUnit && line.src === this) {
+                        if (line.options.isRelationToRelation) {
+                            this.$el.querySelector('.connector-bottom').classList.add('active');    
+                        } else {
+                            this.$el.querySelector('.connector-right').classList.add('active');
+                        }
+                    }
                 }
-                board.deleteUnitOnRuntime(this.unit.getUID());   
-            }
+                if (lines.length === 0) {
+                    if (this.groupContainer) {
+                        this.groupContainer.removeItem(this.unit.getUID())
+                    }
+                    board.deleteUnitOnRuntime(this.unit.getUID());   
+                }
+            },
+            deep: true
         }
+
     }
 
 }

@@ -17,43 +17,12 @@ import { Constants } from '../../assets/js/Helpers';
 export default {
     mounted: function() {
         let self = this;
-        this.$el.ref = this.id;
-        this.$el.nextElementSibling.querySelector('path').ref = this.id;
-        this.left = this.x4; this.top = this.y4;
-        // let container = this.$el.nextElementSibling.getBoundingClientRect();
 
-        if(!self.src || !self.dest) return;
-        if (this.options.isInfoToEnum) {
-            this.srcHandle = this.src.$el.querySelector('.connector-enum');
-            this.destHandle = this.dest.$el;
-            this.bezierWeight = 0;
-        }
-        else if (this.options.isRelationToRelation) {
-            this.srcHandle = this.src.$el.querySelector('.connector-bottom');
-            this.destHandle = this.dest.$el.querySelector('.connector-top');
-            this.bezierWeight = 0.7;
-        }
-        else if (this.options.isUnitToRelation) {
-            this.srcHandle = this.src.$el.querySelector('.connector-right');
-            this.destHandle = this.dest.$el.querySelector('.connector-left');
-            // if (this.options.isReverse) {
-            //     this.srcHandle = this.src.$el.querySelector('.connector-left');
-            //     this.destHandle = this.dest.$el.querySelector('.connector-right');
-            // }
-            this.bezierWeight = 0.7;
-        }
-        else if (this.options.isRelationToUnit) {
-            this.srcHandle = this.src.$el.querySelector('.connector-right');
-            this.destHandle = this.dest.$el.querySelector('.connector-left');
-            // if (this.options.isReverse) {
-            //     this.srcHandle = this.src.$el.querySelector('.connector-left');
-            //     this.destHandle = this.dest.$el.querySelector('.connector-right');
-            // }
-            this.bezierWeight = 0.7;
-        }
+        this.updateHandlers();
 
         let updateOften = function() {
-            requestAnimationFrame(self.updateLine);
+            self.updateLine();
+            requestAnimationFrame(updateOften);
         }
         requestAnimationFrame(updateOften);
 
@@ -91,6 +60,43 @@ export default {
             // let px = this.x4, py = this.y4;
             // point.style.transform = `translate3d(${px}px, ${py}px,0)`;
             // requestAnimationFrame(this.updateLine);
+        },
+        updateHandlers() {
+            let self = this;
+            this.$el.ref = this.id;
+            this.$el.nextElementSibling.querySelector('path').ref = this.id;
+            this.left = this.x4; this.top = this.y4;
+            // let container = this.$el.nextElementSibling.getBoundingClientRect();
+
+            if(!self.src || !self.dest) return;
+            if (this.options.isInfoToEnum) {
+                this.srcHandle = this.src.$el.querySelector('.connector-enum');
+                this.destHandle = this.dest.$el;
+                this.bezierWeight = 0;
+            }
+            else if (this.options.isRelationToRelation) {
+                this.srcHandle = this.src.$el.querySelector('.connector-bottom');
+                this.destHandle = this.dest.$el.querySelector('.connector-top');
+                this.bezierWeight = 0.7;
+            }
+            else if (this.options.isUnitToRelation) {
+                this.srcHandle = this.src.$el.querySelector('.connector-right');
+                this.destHandle = this.dest.$el.querySelector('.connector-left');
+                // if (this.options.isReverse) {
+                //     this.srcHandle = this.src.$el.querySelector('.connector-left');
+                //     this.destHandle = this.dest.$el.querySelector('.connector-right');
+                // }
+                this.bezierWeight = 0.7;
+            }
+            else if (this.options.isRelationToUnit) {
+                this.srcHandle = this.src.$el.querySelector('.connector-right');
+                this.destHandle = this.dest.$el.querySelector('.connector-left');
+                // if (this.options.isReverse) {
+                //     this.srcHandle = this.src.$el.querySelector('.connector-left');
+                //     this.destHandle = this.dest.$el.querySelector('.connector-right');
+                // }
+                this.bezierWeight = 0.7;
+            }
         },
         // changeSrc(newSrc) {
         //     this.src = newSrc;
@@ -374,6 +380,48 @@ export default {
         },
     },
     watch: {
+        options: {
+            deep: true,
+            handler() {
+                let self = this;
+                this.$el.ref = this.id;
+                this.$el.nextElementSibling.querySelector('path').ref = this.id;
+                this.left = this.x4; this.top = this.y4;
+                // let container = this.$el.nextElementSibling.getBoundingClientRect();
+
+                if(!self.src || !self.dest) return;
+                if (this.options.isInfoToEnum) {
+                    this.srcHandle = this.src.$el.querySelector('.connector-enum');
+                    this.destHandle = this.dest.$el;
+                    this.bezierWeight = 0;
+                }
+                else if (this.options.isRelationToRelation) {
+                    this.srcHandle = this.src.$el.querySelector('.connector-bottom');
+                    this.destHandle = this.dest.$el.querySelector('.connector-top');
+                    this.bezierWeight = 0.7;
+                }
+                else if (this.options.isUnitToRelation) {
+                    this.srcHandle = this.src.$el.querySelector('.connector-right');
+                    this.destHandle = this.dest.$el.querySelector('.connector-left');
+                    // if (this.options.isReverse) {
+                    //     this.srcHandle = this.src.$el.querySelector('.connector-left');
+                    //     this.destHandle = this.dest.$el.querySelector('.connector-right');
+                    // }
+                    this.bezierWeight = 0.7;
+                }
+                else if (this.options.isRelationToUnit) {
+                    this.srcHandle = this.src.$el.querySelector('.connector-right');
+                    this.destHandle = this.dest.$el.querySelector('.connector-left');
+                    // if (this.options.isReverse) {
+                    //     this.srcHandle = this.src.$el.querySelector('.connector-left');
+                    //     this.destHandle = this.dest.$el.querySelector('.connector-right');
+                    // }
+                    this.bezierWeight = 0.7;
+                }
+
+                // this.updateLine();
+            }
+        }
         // x1: function(x1) {
         //     if (x1 === -1) {
         //         this.$parent.deleteLineOnRuntime(this.line.id);

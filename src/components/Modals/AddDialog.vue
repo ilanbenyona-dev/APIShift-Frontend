@@ -9,7 +9,7 @@
                         Name:
                     </div>
                     <input v-model="text" :class="{'nonempty': text.length>0}"
-                        class="modal__body__name-value input">
+                        class="modal__body__name-value single-line input">
                 </div>
                 <item-builder :itemName="text">{{text}}</item-builder>
             </div>
@@ -26,7 +26,7 @@ export default {
     },
     data: function() {
         return {
-            text: 'iuhiyhyiu',
+            text: '',
             editmode: true,
             isModalActive: false, // Can be changed from outside,
             clickListener: null
@@ -164,11 +164,11 @@ export default {
                     outline: none;
                     border: none;
                     line-height: 1000px;
-                    border-bottom: 1px solid white;
-                    animation: blink .5s step-end infinite alternate;
+                    border-bottom: 1px dashed black;
+                    // animation: blink .5s step-end infinite alternate;
 
                     &:focus {
-                        border-bottom: 1px dashed black;
+                        border-bottom: 1px solid black;
                     }
 
                     &.nonempty {

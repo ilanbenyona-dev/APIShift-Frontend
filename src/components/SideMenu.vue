@@ -23,9 +23,7 @@
   </div>
 </template>
 
-<script>
-import { Relation, } from "../assets/js/unit-classes";
-import { Constants } from "../assets/js/Helpers";
+<script>    
 
 export default {
     methods: {
@@ -58,16 +56,7 @@ export default {
             }
         },
         addRelation: function() {
-            let selectedUnits = this.$parent.$refs.board.getSelectedUnits();
-            let src = selectedUnits[0];
-            let dest = selectedUnits[1];
-
-            if (!(src&&dest)) {
-                alert('2.11.2020');
-                return;
-            }
-            let relation = new Relation(src, dest, Constants.ONE_TO_ONE, "UserPosts");
-            this.$parent.$refs.board.addUnitOnRuntime(relation);
+            this.$parent.$refs['edit-relation'].isModalActive=true;
         },
         addEnum: async function() {
             let board = this.$parent.$refs.board;
@@ -95,7 +84,7 @@ export default {
         align-items: center;
         justify-items: center;
         height: 100%;
-        background-color: white;
+        background-color: #F2F1EF;
         border-right: 1px solid black;
         z-index: 9999;
 
@@ -106,7 +95,7 @@ export default {
             justify-self: center;
             div {
                 display: flex;
-                background: white;
+                background-color: #F2F1EF;
                 border: 1px solid black;
                 line-height: 5rem;
                 text-align: center;
@@ -117,6 +106,11 @@ export default {
                     height: 40px;
                     width: 40px;
                 }
+
+                &:first-of-type  {
+                    border-top: none;
+                }
+                
             }
         }
     }

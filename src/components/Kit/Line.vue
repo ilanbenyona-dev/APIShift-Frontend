@@ -26,6 +26,10 @@ export default {
         }
         requestAnimationFrame(updateOften);
 
+        // Resetting r in a time inteval
+        setInterval(() => {
+            self.r = 0;
+        }, 10000);
         // TODO: It can be removed - not critical
         // setInterval(() => {
         //     self.updateLine();

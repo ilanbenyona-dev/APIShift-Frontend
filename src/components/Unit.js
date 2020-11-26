@@ -27,15 +27,23 @@ export default {
         moveBy: function(dx,dy) { 
             this.left += dx;
             this.top += dy;
+
+            this.updateLines();
+        },
+        moveTo: function(left,right)  {
+            this.left = left;
+            this.top = right;
+            this.updateLines();
         },
         internalScaleTo: function(cx, cy, scaleBy) {
+            // this.updateLines();
             this.scale *=scaleBy;
 
             if (cx != -1 && cy != -1) {
                 this.left = (this.left * scaleBy + (cx) * (1-scaleBy));
                 this.top = (this.top * scaleBy + (cy) * (1-scaleBy));   
+                this.updateLines();
             }
-            this.updateLines();
         },
         handleEditLogic: function (){
             if (!this.isEditableUnit) {
@@ -47,9 +55,12 @@ export default {
             }
         },
         keydown(e) {
+            let self = this;
+
             if (!this.isEditableUnit) {
                 return; 
             }
+            this.updateLines();
             e.stopPropagation();
             const isControlKey = {
                 "ArrowLeft"  : true,
@@ -66,15 +77,33 @@ export default {
                 }
                 this.text = this.$el.querySelector('.input').innerText;
             }
+
+            /* Update line on animation interval in the initial 3 seconds */
+            let start_time = new Date();
+            let updateOften = function() {
+                self.updateLines();
+                if (new Date()-start_time > 3000) {
+                    return;
+                }
+                requestAnimationFrame(updateOften);
+            }
+            requestAnimationFrame(updateOften);
         },
         /* position attached lines */
         updateLines() {
-            // let board = this.$parent;
-            // for (const lineId of this.lines) {
-            //     if (board.$refs[lineId]) {
-            //         board.$refs[lineId].updateLine();
-            //     }
-            // }
+            let board = this.$parent;
+            for (const lineId of this.lines) {
+                if (board.$refs[lineId]) {
+                    board.$refs[lineId].updateLine();
+                }
+            }
+            if (this.groupContainer) {
+                for (const lineId of this.groupContainer.lines) {
+                    if (board.$refs[lineId]) {
+                        board.$refs[lineId].updateLine();
+                    }
+                }
+            }
         },
         pushLine(lineId) {
             this.lines.push(lineId);
@@ -138,14 +167,10 @@ export default {
         left: function(newLeft) {
             /* Move element on data level */
             this.unit.setX(newLeft);
-        
-            this.updateLines();
         },
         top: function(newTop) {
             /* Move element on data level */
             this.unit.setY(newTop);
-        
-            this.updateLines();
         },
         editmode: function(mode) {
             if (!this.isEditableUnit) {

@@ -29,7 +29,7 @@
             </svg>
             <template v-for="(unit) in unitList"
                 :key="unit._id">
-                <type-unit class="unit" v-if="unit._type === 'Type' && renderKey >= 0"
+                <type-unit class="unit" v-if="unit._type === 'Type'"
                     :ref="unit._id"
                     :unit="unit"
                     :zIndex="zIndex"
@@ -37,10 +37,15 @@
                     @unitdragend="unitdragend"
                     style="width: auto; height: auto;">
                 </type-unit>
-            </template> 
-            <template v-for="(unit) in unitList"
-                :key="unit._id">
-                <enum-unit class="unit" v-if="unit._type === 'Enum' && renderKey >= 1"
+                <point-unit class="unit" v-if="unit._type === 'Point'"
+                    :ref="unit._id"
+                    :unit="unit"
+                    :zIndex="zIndex"
+                    @unitdragstart="zIndexUpdate"
+                    @unitdragend="unitdragend"
+                    style="width: auto; height: auto;">
+                </point-unit>
+                <enum-unit class="unit" v-if="unit._type === 'Enum'"
                     :ref="unit._id"
                     :unit="unit"
                     :zIndex="zIndex"
@@ -49,21 +54,7 @@
                     @unitdragend="unitdragend"
                     style="width: auto; height: auto;">
                 </enum-unit>
-            </template>             
-            <template v-for="(unit) in unitList"
-                :key="unit._id">
-                <item-unit class="unit" v-if="unit._type === 'Item' && renderKey >= 2"
-                    :ref="unit._id"
-                    :unit="unit"
-                    :zIndex="zIndex"
-                    @unitdragstart="zIndexUpdate"
-                    @unitdragend="unitdragend"
-                    style="width: auto; height: auto;">
-                </item-unit>
-            </template> 
-            <template v-for="(unit) in unitList"
-                :key="unit._id">
-                <relation-unit class="unit" v-if="unit._type === 'Relation' && renderKey >= 3"
+                <relation-unit class="unit" v-if="unit._type === 'Relation'"
                     :ref="unit._id"
                     :unit="unit"
                     :zIndex="zIndex"
@@ -72,10 +63,15 @@
                     @unitdragend="unitdragend"
                     style="width: auto; height: auto;">
                 </relation-unit>
-            </template>
-            <template v-for="(unit) in unitList"
-                :key="unit._id">
-                <group-unit class="unit" v-if="unit._type === 'Group' && renderKey >= 5"
+                <item-unit class="unit" v-if="unit._type === 'Item'"
+                    :ref="unit._id"
+                    :unit="unit"
+                    :zIndex="zIndex"
+                    @unitdragstart="zIndexUpdate"
+                    @unitdragend="unitdragend"
+                    style="width: auto; height: auto;">
+                </item-unit>
+                <group-unit class="unit" v-if="unit._type === 'Group'"
                     :ref="unit._id"
                     :unit="unit"
                     :zIndex="zIndex"
@@ -84,18 +80,28 @@
                     @unitdragend="unitdragend"
                     style="width: auto; height: auto;">
                 </group-unit>
+
+            </template> 
+            <template v-for="(unit) in unitList"
+                :key="unit._id">
+
+            </template>             
+            <template v-for="(unit) in unitList"
+                :key="unit._id">
+
+            </template> 
+            <template v-for="(unit) in unitList"
+                :key="unit._id">
+
+            </template>
+            <template v-for="(unit) in unitList"
+                :key="unit._id">
+
                 <!-- <div :ref="unit._id" v-if="unit._type === 'Group' && renderKey >= 6">a</div> -->
             </template> 
             <template v-for="(unit) in unitList"
                 :key="unit._id">
-                <point-unit class="unit" v-if="unit._type === 'Point' && renderKey >= 5"
-                    :ref="unit._id"
-                    :unit="unit"
-                    :zIndex="zIndex"
-                    @unitdragstart="zIndexUpdate"
-                    @unitdragend="unitdragend"
-                    style="width: auto; height: auto;">
-                </point-unit>
+
                 <!-- <div :ref="unit._id" v-if="unit._type === 'Group' && renderKey >= 6">a</div> -->
             </template> 
 
@@ -335,7 +341,6 @@ import { Helpers } from '../assets/js/Helpers';
                                         await relation.changeDestOnRuntime(relation.unit.getDestId());
                                     }
                                     await relation.changeSrcOnRuntime(point.getUID());
-                                    // await relation.changeDestOnRuntime(relation.unit.getDestId());
                                 } else if (line.options.isRelationToUnit) {
                                     const pointType = line.dest.unit._prevType || line.dest.unit.getType();
                                     point = new Point(ev.clientX - 10*self.scale,ev.clientY - 10*self.scale, pointType);
@@ -343,11 +348,11 @@ import { Helpers } from '../assets/js/Helpers';
                                     
                                     // /* Change line destination to new Point */
                                     let relation = line.src;
+                                    console.log(relation.settings);
                                     if (relation.unit.getSrcId() === relation.unit.getDestId()) {
                                         await relation.changeSrcOnRuntime(relation.unit.getSrcId());
                                     }
                                     await relation.changeDestOnRuntime(point.getUID());
-                                    // await relation.changeSrcOnRuntime(relation.unit.getSrcId());
                                 }
                                 pressedUnit = self.$refs[point.getUID()].$el;
                             } else if(line.options.isInfoToEnum) {
@@ -448,10 +453,7 @@ import { Helpers } from '../assets/js/Helpers';
                                 let unit = self.$refs[unitObj.getUID()];
                                 unit.internalScaleTo(center.x, center.y, scaleBy);
                             });
-                            self.lines.forEach((lineObj) => {
-                                let line = self.$refs[lineObj.getUID()];
-                                line.internalScaleTo(center.x, center.y, scaleBy);
-                            });
+
                             self.scale *= scaleBy;
                             boardStore.setScale(self.scale);
                         }
@@ -488,12 +490,16 @@ import { Helpers } from '../assets/js/Helpers';
                         }
                         else if (pressedUnit) {
                             let unitId = pressedUnit.ref;
-                            self.$refs[unitId].onDragEnd();
+                            let unit = self.$refs[unitId];
+                            if (unit) {
+                                unit.onDragEnd();
+                            }
                             
                             if (ev.ctrlKey && !pressedUnit.closest('.unit-point')) {
                                 /* Show context menu in click position */
                                 let contextMenu = self.$refs['contextmenu'];
-
+    
+                                console.log(pressedUnit);
                                 /* Show relatable contextmenu only on Unit context click */
                                 if (pressedUnit.closest('.unit-item') || pressedUnit.closest('.unit-relation') || pressedUnit.closest('.unit-group')) {
                                     contextMenu.$el.classList.add('relatable');
@@ -501,10 +507,10 @@ import { Helpers } from '../assets/js/Helpers';
                                     contextMenu.$el.classList.remove('relatable');
                                 }
                                 
-                                // contextMenu.pressedUnit = self.$refs[pressedUnit.ref];
-                                // contextMenu.left = ev.clientX;
-                                // contextMenu.top = ev.clientY;
-                                contextMenu.activate(pressedUnit.ref, ev.clientX, ev.clientY);
+                                if (pressedUnit.closest('.unit-type')) {
+                                    self.$refs[unitId].onDragStart();
+                                }
+                                contextMenu.activate(pressedUnit.ref, ev.clientX, ev.clientY);                                
                             }
                             
                             pressedUnit.classList.remove('dragged');
@@ -554,6 +560,7 @@ import { Helpers } from '../assets/js/Helpers';
                     /* Pointer has canceled */
                     el.onpointerup = pointerup_handler;
                     el.onpointercancel = pointerup_handler;
+                    // el.onpointerleave = pointerup_handler;
 
                     /* Zooming on desktop && laptop, tested on chrome and macbook */
                     el.addEventListener('wheel' , (e) => {
@@ -585,12 +592,12 @@ import { Helpers } from '../assets/js/Helpers';
                     });
 
                     /* Is G button pressed create group of selected units */
-                    window.addEventListener('keyup',(e) => {
+                    window.addEventListener('keyup',async (e) => {
                         if (e.key === 'g') {
                             let unitElements = Array.from(document.querySelectorAll('.selected'));
                             if (unitElements.length) {
                                 let group = new Group(unitElements.map(unit=>unit.ref));
-                                self.addUnitOnRuntime(group);
+                                await self.addUnitOnRuntime(group);
                             }
                         }
                     })
@@ -620,9 +627,16 @@ import { Helpers } from '../assets/js/Helpers';
              * 
              */
             async addLineOnRuntime(srcId,destId, options){
+                let board = this;
                 const src = this.$refs[srcId];
                 const dest = this.$refs[destId];
 
+                if (!src || !dest) {
+                    var loop = function() {
+                        requestAnimationFrame(board.addLineOnRuntime);
+                    }
+                    requestAnimationFrame(loop);
+                }
                 // TODO: Use is as js Set instead of js Array
                 /* Ordering the Id's and producing the same uid for any combinations of order */
                 let uid = Helpers.generateUID();
@@ -654,12 +668,14 @@ import { Helpers } from '../assets/js/Helpers';
              * Gets a Relation Unit and starts drawing procedure on screen
              */
             async createRelation(srcId,destId,type, options=null) {
+                let board = this;
+
                 if (srcId) {
-                    this.relateFrom = srcId;
+                    this.relateFrom = board.$refs[srcId];
                     console.log('relation from ' + srcId);
                 }
                 if (destId) {
-                    this.relateTo = destId;
+                    this.relateTo = board.$refs[destId];
                     console.log('relation to ' + destId);
                 }
                 if (type) {
@@ -673,15 +689,19 @@ import { Helpers } from '../assets/js/Helpers';
                 }
 
                 if (this.relateFrom && this.relateTo && this.relateType) {
-                    let relation = new Relation(this.relateFrom ,this.relateTo, this.relateType, options);
-                    await this.addUnitOnRuntime(relation);
+                    let srcGroup = this.relateFrom.groupContainer;
+                    let destGroup = this.relateTo.groupContainer;
 
-                    /* If related items are in a group, add relation to group */
-                    let srcGroup = this.$refs[this.relateFrom].groupContainer;
-                    let destGroup = this.$refs[this.relateTo].groupContainer;
-                    if (srcGroup && srcGroup == destGroup) {
-                        srcGroup.addItem(relation.getUID());
-                        this.$refs[relation.getUID()].groupContainer = srcGroup;
+                    if (srcGroup === destGroup) {
+
+                        let relation = new Relation(this.relateFrom.unit.getUID(), this.relateTo.unit.getUID(), this.relateType, options);
+                        await this.addUnitOnRuntime(relation);
+
+                        /* If related items are in a group, add relation to group */
+                        if (srcGroup && srcGroup == destGroup) {
+                            srcGroup.addItem(relation.getUID());
+                            this.$refs[relation.getUID()].groupContainer = srcGroup;
+                        }          
                     }
                     this.relateFrom = null;
                     this.relateTo = null;

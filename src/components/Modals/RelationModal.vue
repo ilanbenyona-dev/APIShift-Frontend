@@ -30,18 +30,33 @@
 <script>
 import ItemBulider from './ItemBuilder';
 import DropDownUnits from './DropDownUnits';
+import { boardStore } from '../../store/board';
 
 export default { 
     components: {
         'item-builder': ItemBulider,
         'drop-down-units': DropDownUnits
     },
+     beforeMount: async function() {
+        await boardStore.init();
+        console.log(this.itemList);
+    },
     data: function() {
         return {
             text: '',
             editmode: true,
             isModalActive: false, // Can be changed from outside,
-            clickListener: null
+            clickListener: null,
+
+        }
+    },
+    computed: {
+        itemList: function() {
+            return boardStore.getUnitList().filter((unit) => {
+                if(unit.getType() === "Item" || unit.getType() === "Group" || unit.getType() === "Relation") {
+                    return unit;
+                }
+            })
         }
     },
     methods: {
@@ -77,15 +92,7 @@ export default {
             self.isModalActive = false;
         }
 
-        // if (isModalActive) {
-        //     this.clickListener = shadow.addEventListener('pointerdown', disableShadow);
-        // } else {
-        //     shadow.removeEventListener('pointerdown', disableShadow);
-        // }
-
         this.clickListener = shadow.addEventListener('pointerdown', disableShadow);
-
-        console.log(this.clickListener);
     },
 }
 </script>

@@ -3,7 +3,7 @@
         <div class="unit-relation__header">
             <div class="unit-relation__header__text single-line input"
             :contenteditable="editmode"
-            @keydown="keydown">{{unit.getText()}}</div>                 
+            @keydown="keydown">{{unit.getUID()}}</div>                 
             <div class="unit-relation__header__type">R</div>
         </div>
         <div class="connector">
@@ -11,6 +11,7 @@
             <div class="connector-top"></div>
             <div class="connector-right"></div>
             <div class="connector-bottom"></div>
+            <div class="connector-enum"></div>
         </div>
     </div>
 </template>
@@ -21,6 +22,15 @@ import Unit from '../Unit.js'
 
 export default {
     mixins: [Unit],
+    data() {
+        return {
+            /* Line settings determined on runtime */
+            settings: {
+                isRelationToRelation: false,
+                isItemToItem: false
+            }
+        }
+    },
     mounted: function() {
         let self = this;
 
@@ -50,6 +60,14 @@ export default {
 
         /* Set edit functionality */
         this.handleEditLogic();
+
+        this.calculateSettings();
+
+        // let updateOften = function() {
+        //     self.calculateSettings();
+        //     requestAnimationFrame(updateOften);
+        // }
+        // updateOften();
     },
     methods: {
         /* Drag & Drop methods  */
@@ -68,8 +86,7 @@ export default {
             // var board = this.$parent;
 
             /* Position element in the UI level */
-            this.left += dx;
-            this.top += dy;
+            this.moveBy(dx,dy);
 
             /* Optional - move points attached */
             // this.lines.forEach((lineId) => {
@@ -87,37 +104,58 @@ export default {
         onDragEnd: function() {
             this.$el.dispatchEvent(new Event('unitdragend'));
         },
-        onDelete() {
+        async onDelete() {
             let board = this.$parent;
             var x,y,point, elRect = this.$el.getBoundingClientRect();
 
-            x = this.left + elRect.width/2 - 5*this.scale;
-            y = this.top + elRect.height/2 - 5*this.scale;
-            point = new Point(x,y,this.unit.getType());
-            
-            this.lines.forEach(async (lineId) => {
-                let line = board.$refs[lineId];
-                // let x,y, point, elRect = this.$el.getBoundingClientRect();
 
+            
+            for (const lineId of this.lines) {
+                let line = board.$refs[lineId];
+                // let lineSrc = line.src;
+                // let lineDest = line.dest;
+
+                x = this.left + elRect.width/2 - 5*this.scale;
+                y = this.top + elRect.height/2 - 5*this.scale;
+                point = new Point(x,y,this.unit.getType());
+
+                console.log('Line src ', line.src.unit.getUID());
+                console.log('Line dest ', line.dest.unit.getUID());
+
+
+                // let relation = lineSrc.unit.getType() === "Relation" && lineSrc.unit.getUID() !== this.unit.getUID() ? lineSrc :
                 /* Detach connected relations upon deletion */
-                if (line.src.unit.getType() === "Relation") {
+                if (line.src.unit.getType() === "Relation" && line.src.unit.getUID() !== this.unit.getUID()) {
                     if (line.src.unit.getDestId() === this.unit.getUID()) {
                         await board.addUnitOnRuntime(point);
-                        line.src.changeDestOnRuntime(point.getUID());
+                        await line.src.changeDestOnRuntime(point.getUID());
                     } else {
-                        board.deleteLineOnRuntime(lineId);
+                        await board.deleteLineOnRuntime(lineId);
                     }
                 }
-                else if (line.dest.unit.getType() === "Relation") {
-                    if (line.dest.unit.getSrcId() === this.unit.getUID()) {
+                else if (line.dest.unit.getType() === "Relation" && line.dest.unit.getUID() !== this.unit.getUID()) {
+                    if (line.dest.unit.getSrcId() === this.unit.getUID() ||
+                        line.src.unit.getDestId() === this.unit.getUID()) {
                         await board.addUnitOnRuntime(point);
-                        line.dest.changeSrcOnRuntime(point.getUID());
+                        await line.dest.changeSrcOnRuntime(point.getUID());
                     } else {
-                        board.deleteLineOnRuntime(lineId);
+                        await board.deleteLineOnRuntime(lineId);
                     }
                 }
-                board.deleteLineOnRuntime(lineId);
-            });
+                else if (line.options.isInfoToEnum) {
+                    let enumUnit = line.dest;
+                    enumUnit.unit.setItemId(null);
+                }
+
+                if (line.src.unit.getUID() === this.unit.getUID()) {
+                    await board.deleteLineOnRuntime(lineId);
+                }
+                if (line.dest.unit.getUID() === this.unit.getUID()) {
+                    await board.deleteLineOnRuntime(lineId);
+                }
+                
+                // board.deleteLineOnRuntime(lineId);
+            }
 
 
         },
@@ -133,12 +171,12 @@ export default {
                 return;
             }
 
-            var isRelationToRelation = false;
-            if (srcUnit.unit._prevType === 'Relation') {
-                isRelationToRelation = 'Relation' === (destUnit.unit._prevType || destUnit.unit.getType())
-            } else if (destUnit.unit._prevType === 'Relation') {
-                isRelationToRelation = 'Relation' === (srcUnit.unit._prevType || srcUnit.unit.getType())
-            }
+            var isRelationToRelation = this.settings.isRelationToRelation;
+            // if (srcUnit.unit._prevType === 'Relation') {
+            //     isRelationToRelation = 'Relation' === (destUnit.unit._prevType || destUnit.unit.getType())
+            // } else if (destUnit.unit._prevType === 'Relation') {
+            //     isRelationToRelation = 'Relation' === (srcUnit.unit._prevType || srcUnit.unit.getType())
+            // }
             const isReverse = srcUnit === destUnit;
 
             await this.$parent.addLineOnRuntime(this.unit.getSrcId(), this.unit.getUID(), 
@@ -153,33 +191,17 @@ export default {
             //     this.$el.querySelector('.connector-left').classList.add('active');            
             // }
 
-            console.log('asd 1');
             await this.$parent.addLineOnRuntime(this.unit.getUID(), this.unit.getDestId(),
                 {isRelationToUnit: true, 
                   relationType: this.unit.getRelationType(),
                   isRelationToRelation,
                   isReverse
                 });
-                console.log('asd 2');
             this.$forceUpdate();
-            // if (isRelationToRelation) {
-            //     this.$el.querySelector('.connector-bottom').classList.add('active');            
-            // } else {
-            //     this.$el.querySelector('.connector-right').classList.add('active');            
-            // }
-
-            // this.pushLine(line1);
-            // this.pushLine(line2);
-            // srcUnit.pushLine(line1);    
-            // destUnit.pushLine(line2);
-
         },
         async changeDestOnRuntime(newDestId) {
             const board = this.$parent;
             const destItem = board.$refs[this.unit.getDestId()];
-            const newDest = board.$refs[newDestId];
-
-            console.log(this.unit.getDestId());
             
             if (!destItem) {
                 return;
@@ -198,19 +220,18 @@ export default {
             await board.addLineOnRuntime(this.unit.getUID(), newDestId, {
                 isRelationToUnit: true, 
                 relationType: this.unit.getRelationType(),
-                isRelationToRelation: this.unit.getType() === newDest.unit.getType() || newDest.unit._prevType === "Relation"
+                // isRelationToRelation: this.settings.isRelationToRelation//this.unit.getType() === newDest.unit.getType() || newDest.unit._prevType === "Relation"
             });
             
             /* Change relation dest on Data level (model) */
             this.unit.setDestId(newDestId);
 
-            console.log(this.unit.getDestId());
-
+            this.calculateSettings();
         },
         async changeSrcOnRuntime(newSrcId) {
             const board = this.$parent;
             const srcItem = board.$refs[this.unit.getSrcId()];
-            const newSrc = board.$refs[newSrcId];
+            // const newSrc = board.$refs[newSrcId];
 
             // const isRelationToRelation = this.unit.getType() === newSrc.unit.getType() || newSrc.unit._prevType === "Relation";
 
@@ -227,13 +248,67 @@ export default {
             await board.addLineOnRuntime(newSrcId, this.unit.getUID(), {
                 isUnitToRelation: true, 
                 relationType: this.unit.getRelationType(),
-                isRelationToRelation: this.unit.getType() === newSrc.unit.getType() || newSrc.unit._prevType === "Relation"
+                // isRelationToRelation: this.settings.isRelationToRelation// this.unit.getType() === newSrc.unit.getType() || newSrc.unit._prevType === "Relation"
             });
 
             
             /* Change relation dest on Data level (model) */
             this.unit.setSrcId(newSrcId);
+
+            this.calculateSettings();
         },
+        calculateSettings() {
+            let board = this.$parent;
+            let srcItem = board.$refs[this.unit.getSrcId()];
+            let destItem = board.$refs[this.unit.getDestId()];
+            
+            if (!srcItem || !destItem || this.lines.length < 2) {
+                return;
+            }
+            let srcType = (srcItem.unit._prevType || srcItem.unit.getType());
+            let destType = (destItem.unit._prevType || destItem.unit.getType());
+            this.settings = {isRelationToRelation: false, isItemToItem: false};
+            
+            /* Find the lines to item */
+            let lineSrcId = this.lines.find((l) => srcItem.lines.includes(l)); 
+            let lineDestId = this.lines.find((l) => destItem.lines.includes(l));
+
+            if (!lineSrcId || !lineDestId) {
+                return;
+            }
+            let lineSrc = board.$refs[lineSrcId];
+            let lineDest = board.$refs[lineDestId];
+
+
+
+            if (this.unit.getUID() === "6djsbh") {
+                console.log(this.unit.getUID(),srcType, destType);
+            }
+    
+            if (srcType === "Relation" && srcType === destType && destItem != srcItem) {
+                this.settings['isRelationToRelation'] = true;
+                lineSrc.options.isRelationToRelation = true;
+                lineDest.options.isRelationToRelation = true;
+                
+            } else {
+                this.settings['isItemToItem'] = true;
+                lineSrc.options.isRelationToRelation = false;
+                lineDest.options.isRelationToRelation = false;
+            }
+
+            this.$el.querySelector('.connector-bottom').classList.remove('active');
+            this.$el.querySelector('.connector-top').classList.remove('active');
+            this.$el.querySelector('.connector-right').classList.remove('active');
+            this.$el.querySelector('.connector-left').classList.remove('active');
+
+            if (this.settings.isRelationToRelation) {
+                this.$el.querySelector('.connector-top').classList.add('active');
+                this.$el.querySelector('.connector-bottom').classList.add('active');
+            } else if (this.settings.isItemToItem) {
+                this.$el.querySelector('.connector-right').classList.add('active');
+                this.$el.querySelector('.connector-left').classList.add('active');
+            }
+        }
     },
     props: {
         isBoardRendered: {
@@ -244,51 +319,23 @@ export default {
         isBoardRendered: function() {
             /* Render lines upon initial renderation */
             this.mountLines();
-
-        },
+        },  
         lines: {
             // immediate: true,
             handler(lines) {
                 let board = this.$parent;
-                console.log(lines);
-                this.$el.querySelector('.connector-bottom').classList.remove('active');
-                this.$el.querySelector('.connector-top').classList.remove('active');
-                this.$el.querySelector('.connector-right').classList.remove('active');
-                this.$el.querySelector('.connector-left').classList.remove('active');
+                let srcItem = board.$refs[this.unit.getSrcId()];
+                let destItem = board.$refs[this.unit.getDestId()];
 
-                for (const lineId of lines) {
-                    let line = board.$refs[lineId];
-                    if (line.src === this) {
-                        if(line.src.unit.getType() === (line.dest.unit._prevType || line.dest.unit.getType())) {
-                            line.options.isRelationToRelation = true;
-                        }
-                    }
-                    if (line.dest === this) {
-                        if(line.dest.unit.getType() === (line.src.unit._prevType || line.src.unit.getType())) {
-                            line.options.isRelationToRelation = true;
-                        }
-                    }
-                    if (line.options.isUnitToRelation && line.dest === this) {
-                        if (line.options.isRelationToRelation) {
-                            this.$el.querySelector('.connector-top').classList.add('active');
-                        } else {
-                            this.$el.querySelector('.connector-left').classList.add('active');
-                        }
-                    } 
-                    else if (line.options.isRelationToUnit && line.src === this) {
-                        if (line.options.isRelationToRelation) {
-                            this.$el.querySelector('.connector-bottom').classList.add('active');    
-                        } else {
-                            this.$el.querySelector('.connector-right').classList.add('active');
-                        }
-                    }
-                }
-                if (lines.length === 0) {
+                
+                this.calculateSettings();                
+                if (lines.length === 0 || (!srcItem && !destItem)) {
                     if (this.groupContainer) {
                         this.groupContainer.removeItem(this.unit.getUID())
                     }
                     board.deleteUnitOnRuntime(this.unit.getUID());   
                 }
+
             },
             deep: true
         }
@@ -366,7 +413,7 @@ export default {
                 position: absolute;
                 top: 0%;
                 left: 50%;
-                                    border-radius: 1000px;
+                border-radius: 1000px;
 
                 &.active { 
                     content: '';
@@ -406,6 +453,11 @@ export default {
                     left: calc(50% - 7.5px);
                     background:rgba(0, 200, 0, 0.95);
                 }
+            }
+            &-enum {
+                position: absolute;
+                top: 50%;
+                left: 50%;
             }
         }
     }

@@ -55,20 +55,7 @@ class Unit {
 class Item extends Unit {
     constructor( x, y, text, objectStr) {
         super( x, y, text, objectStr);
-        if (objectStr) {
-            let obj = objectStr;
-            this._enumId = obj._enumId;
-            return;
-        }
-        this._enumId = null;
         this._type = "Item";
-    }
-
-    setEnumId(unit) {
-        this._enumId = unit;
-    }
-    getEnumId() {
-        return this._enumId;
     }
 }
 
@@ -160,9 +147,11 @@ class Enum extends Unit {
         if (objectStr) {
             let obj = objectStr;
             this._contains = obj._contains;
+            this._itemId = obj._itemId;
             return;
         }
         this._type = "Enum";
+        this._itemId = null;
         this._contains = []; // list of units id
     }
     // Get contained units id
@@ -176,6 +165,13 @@ class Enum extends Unit {
     removeUnitFromEnum(unitId) {
         this._contains = this._contains.filter(item => item !== unitId);
     }
+
+    getItemId() {
+        return this._itemId;
+    }
+    setItemId(itemId) {
+        this._itemId = itemId;
+    }
 }
 
 class Group extends Item {
@@ -184,6 +180,7 @@ class Group extends Item {
         if (objectStr) {
             let obj = objectStr;
             this._contains = obj._contains;
+            this._type = 'Group';
             return;
         }
         this._type = 'Group';

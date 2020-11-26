@@ -44,10 +44,9 @@ export default {
             this.$el.style.zIndex = this.zIndex;
 
             /* Position element in the UI level */
-            this.left += dx;
-            this.top += dy;
+            this.moveBy(dx,dy);
         },
-        onDragEnd: function() {
+        onDragEnd: async function() {
             let board = this.$parent;
             this.$el.dispatchEvent(new Event('unitdragend'));
 
@@ -57,6 +56,7 @@ export default {
                                 ...document.querySelectorAll('.unit-item'),
                                 ...document.querySelectorAll('.unit-relation')];
             let i = itemElements.length;
+            
             while (--i > -1) {
                 if (Helpers.hitTest(itemElements[i], this.$el, 1)) {
                     /* get targeted Info element */
@@ -85,7 +85,7 @@ export default {
                                 return;
                             }
                         } 
-                        relation.changeSrcOnRuntime(itemId);
+                        await relation.changeSrcOnRuntime(itemId);
                     } if (line.options.isRelationToUnit) {
                         relation = line.src;
                         if (relation.groupContainer !== board.$refs[itemId].groupContainer) {
@@ -96,7 +96,7 @@ export default {
                                 return;
                             }
                         } 
-                        relation.changeDestOnRuntime(itemId);
+                        await relation.changeDestOnRuntime(itemId);
                     }
                     return;
                 }
@@ -120,7 +120,6 @@ export default {
                     if (line.dest.unit.getType() === "Relation") {
                         this.relation = line.dest;
                     }
-                    console.log(this.relation);
                 }
                 if (lines.length === 0) {
                     let board = this.$parent;

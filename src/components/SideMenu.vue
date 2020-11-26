@@ -28,24 +28,6 @@
 export default {
     methods: {
         addItem: function() {
-            // const width  = window.innerWidth || document.documentElement.clientWidth || 
-            // document.body.clientWidth;
-            // const height = window.innerHeight|| document.documentElement.clientHeight|| 
-            // document.body.clientHeight;
-
-            // let offsetTop = (height/(2) - this.$parent.$refs.board.$el.getBoundingClientRect().top);
-            // let offsetLeft = (width/(2) - this.$parent.$refs.board.$el.getBoundingClientRect().left);
-            // let scale = this.$parent.$refs.board.getScale();
-
-            // offsetTop /= scale*scale;
-            // offsetLeft /= scale*scale;
-
-            // if (offsetLeft < 0 || offsetTop < 0) {
-            //     alert(`(${offsetLeft},${offsetTop}) not in range`);
-            // }
-
-            // let unit = new Type(offsetLeft,offsetTop, "");
-            //
             this.$parent.$refs['add-dialog'].isModalActive=true;
         },
         deleteItem: function() {

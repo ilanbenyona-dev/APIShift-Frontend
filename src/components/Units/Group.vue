@@ -10,6 +10,7 @@
         <div class="connector">
             <div class="connector-left"></div>
             <div class="connector-right"></div>
+            <div class="connector-enum"></div>
         </div>
     </div>
 </template>
@@ -86,8 +87,7 @@ export default {
             // this.top += dy;
 
             this.containedUnits.forEach((unit) => {
-                unit.left += dx;
-                unit.top += dy;
+                unit.moveBy(dx,dy);
                 if (unit.unit.getType() ===  "Relation") {
                     if (board.$refs[unit.unit.getSrcId()].unit.getType() === "Point") {
                         board.$refs[unit.unit.getSrcId()].moveBy(dx,dy);
@@ -106,19 +106,18 @@ export default {
             let board = this.$parent;
             var x,y,point, elRect = this.$el.getBoundingClientRect();
 
-            x = this.left + elRect.width/2 - 10*this.scale;
-            y = this.top + elRect.height/2 - 10*this.scale;
-            point = new Point(x,y,this.unit.getType());
 
 
             for (const lineId of this.lines) {
                 let line = board.$refs[lineId];
+                x = this.left + elRect.width/2 - 10*this.scale;
+                y = this.top + elRect.height/2 - 10*this.scale;
+                point = new Point(x,y,this.unit.getType());
 
                 /* Detach connected relations upon deletion */
                 if (line.src.unit.getType() === "Relation") {
                     if (line.src.unit.getDestId() === this.unit.getUID()) {
                         await board.addUnitOnRuntime(point);
-                        // setTimeout(()=>line.src.changeDestOnRuntime(point.getUID()),0);
                         line.src.changeDestOnRuntime(point.getUID());
                     } else {
                         board.deleteLineOnRuntime(lineId);
@@ -132,7 +131,6 @@ export default {
                         board.deleteLineOnRuntime(lineId);
                     }
                 }
-                    // board.deleteLineOnRuntime(lineId);
             }
 
 
@@ -340,6 +338,11 @@ export default {
                 position: absolute;
                 top: 50%;
                 left: 100%;
+            }
+            &-enum {
+                position: absolute;
+                top: 50%;
+                left: 50%;
             }
         }
     }

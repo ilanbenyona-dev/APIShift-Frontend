@@ -20,20 +20,16 @@ export default {
 
         this.updateHandlers();
 
+        /* Update line on animation interval in the initial 3 seconds */
+        let start_time = new Date();
         let updateOften = function() {
             self.updateLine();
+            if (new Date()-start_time > 3000) {
+                return;
+            }
             requestAnimationFrame(updateOften);
         }
         requestAnimationFrame(updateOften);
-
-        // Resetting r in a time inteval
-        setInterval(() => {
-            self.r = 0;
-        }, 10000);
-        // TODO: It can be removed - not critical
-        // setInterval(() => {
-        //     self.updateLine();
-        // }, 100);
     },
     data: function() {
         return {
@@ -58,8 +54,13 @@ export default {
             }
         },
         updateLine() {
+            let self = this;
             this.$forceUpdate();
-            this.r += 0.00000000000000001;// | (this.r);
+            requestAnimationFrame(() => {
+                self.r += 0.00000000000000001;
+            })
+            // this.r += 0.00000000000000001;// | (this.r);
+            // console.log(this.r);
             // let point = this.$el.nextElementSibling.querySelector('.point');
             // let px = this.x4, py = this.y4;
             // point.style.transform = `translate3d(${px}px, ${py}px,0)`;
@@ -151,6 +152,9 @@ export default {
     },
     computed: {
         getComputedStyle() {
+            if (!this.options) {
+                return;
+            }
             let isInfoToEnum = this.options.isInfoToEnum;
             let relationType = this.options.relationType;
             if (isInfoToEnum) {
@@ -423,7 +427,7 @@ export default {
                     this.bezierWeight = 0.7;
                 }
 
-                // this.updateLine();
+                this.updateLine();
             }
         }
         // x1: function(x1) {

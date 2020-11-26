@@ -5,7 +5,7 @@
         <div class="unit-enum__header">
             <div class="unit-enum__header__text single-line input"
             :contenteditable="editmode"
-            @keydown="keydown">{{text}}</div>   
+            @keydown="keydown">{{unit.getUID()}}</div>   
             <div class="unit-enum__header__type">E</div>
         </div>
         <div class="unit-enum__items"></div>
@@ -28,11 +28,11 @@ export default {
         }
     },
     mounted: function() {
-        // let self = this;
-
         /* Position element */
         this.left = this.unit.xpos();
         this.top = this.unit.ypos();
+
+        this.mountLines();
 
         /* Set edit functionality */
         this.handleEditLogic();
@@ -49,19 +49,22 @@ export default {
             /* Save initial drag position for future calculations */
             this.originalLeft = this.left;
             this.originalTop = this.top;
-
+                
             this.createPlaceHolders();
         },
         onDrag: function (dx,dy) {
             /* Move elements */
-            this.left += dx;
-            this.top += dy;
+            this.moveBy(dx,dy);
 
             /* Align contained items */
             this.alignItems();
+            
+             if (this.unit.getItemId()) return;
 
-            /* If the element over Info element, highlight, else remove  */
-            let itemElements = document.querySelectorAll('.unit-item');
+            /* If the element over Info element, link Info element */
+            let itemElements = [...document.querySelectorAll('.unit-item'),
+                                    ...document.querySelectorAll('.unit-relation'),
+                                    ...document.querySelectorAll('.unit-group')];
             let i = itemElements.length;
             let itemHitted = false;
             while (--i > -1) {
@@ -77,61 +80,53 @@ export default {
             
             // Handle dragend event on parent board
             this.$el.dispatchEvent(new Event('unitdragend'));
+            this.alignItems();
 
-            // if (this.linkedItem) {
-                
-            // }
+            if (this.unit.getItemId()) return;
+
             /* If the element over Info element, link Info element */
-            let itemElements = [...document.querySelectorAll('.unit-item'),]
-                                //...document.querySelectorAll('.unit-relation'),]
-                                // ...document.querySelectorAll('.unit-group')];
+            let itemElements = [...document.querySelectorAll('.unit-item'),
+                                ...document.querySelectorAll('.unit-relation'),
+                                ...document.querySelectorAll('.unit-group')];
             let i = itemElements.length;
             while (--i > -1) {
                 if (Helpers.hitTest(itemElements[i], this.$el, 1)) {
                     /* get targeted Item element */
                     let itemId = itemElements[i].ref
-                    let targetedItem = this.$parent.$refs[itemId];
                     
                     /* Move Enum to original position on UI level */
-                    this.left = this.originalLeft;
-                    this.top = this.originalTop;
+                    this.moveTo(this.originalLeft,this.originalTop);
 
+                    /* Align contained Types */
                     this.alignItems();
 
-                    /* If targeted Info already linked, dont connect*/
-                    if(targetedItem.getEnumId()) {
-                        break;
-                    }
-                    /* Link Item with Enum on UI level (view) */
-                    await this.$parent.addLineOnRuntime(itemId, this.unit.getUID(), { isInfoToEnum: true });
-
                     /* Link Item with Enum on Data level (model) */
-                    targetedItem.setEnumId(this.unit.getUID());
+                    this.unit.setItemId(itemId);
+
+                    /* Link Item with Enum on UI level (view) */
+                    await this.mountLines();
                     return;
                 }
                 this.$el.classList.remove('highlight');
             }
-            // TODO: just in case, maybe unnecessary
-            this.alignItems();
         
         },
-        onDelete() {
+        async onDelete() {
             let board = this.$parent;
 
-            /* Delete connected lines, and update conneted item data */
-            this.lines.forEach((lineId) => {
-                let line = board.$refs[lineId];
-                let itemItem = line.src;
-                itemItem.removeLineToEnum();
-                board.deleteLineOnRuntime(lineId);
-            });
+            /* Delete connected lines and remove Enum from screen */       
+            for (const lineId of this.lines) {
+                await board.deleteLineOnRuntime(lineId);
+            }
             
             /* Delete contained Types on Enum */
-            this.unit.getContainedUnits().forEach((unitId) => {
+            let containedTypes = this.unit.getContainedUnits();
+            for (const unitId of containedTypes) {
                 let unit = board.$refs[unitId];
-                unit.onDelete();
-            })
-            board.deleteUnitOnRuntime(this.$el.ref);
+                await unit.onDelete();
+            }
+
+            await board.deleteUnitOnRuntime(this.$el.ref);
         },
         /* Unit methods */
         removeUnitFromEnum(unitId) {
@@ -140,9 +135,10 @@ export default {
             targetedUnit.setEnumContainerId(null);
             this.unit.removeUnitFromEnum(unitId);
             this.alignItems();
+
+            this.$el.classList.remove('highlight');
         },
         addUnitToEnum(unitId) {
-            console.log('pokpopokjinibubyuibuy');
             // Assign targeted unit's enum container to this Enum container id
             let targetedUnit = this.$parent.$refs[unitId];
             // Establish relationship between the Enum and the added Unit on the Data level
@@ -151,6 +147,8 @@ export default {
             // Align and move element according to the relationship on UI level
             this.createPlaceHolders();
             this.alignItems();
+
+            this.$el.classList.remove('highlight');
         },
         alignItems() {
             let self = this;
@@ -165,6 +163,8 @@ export default {
                 unit.left = self.left + self.$el.getBoundingClientRect().width/2 - unit.$el.getBoundingClientRect().width/2;
                 unit.top = 15*self.scale + self.$el.querySelector('.unit-enum__header').getBoundingClientRect().bottom + (index * unit.$el.getBoundingClientRect().height);
             });
+
+            this.updateLines();
         },
         createPlaceHolders() {
             let self = this;
@@ -193,8 +193,16 @@ export default {
                 self.$el.querySelector('.unit-enum__items').appendChild(placeholder);
             });
         },
-        removePlaceholders() {
-            
+        async mountLines() {
+            let board = this.$parent;
+
+            /* Mount line with Enum if exists */
+            let itemId = this.unit.getItemId();
+            if (itemId) {
+                await board.addLineOnRuntime(itemId, this.unit.getUID(), 
+                    { isInfoToEnum: true }
+                );
+            }
         },
     },
     props: {

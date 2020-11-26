@@ -24,6 +24,12 @@ export default {
         border-radius: 5px;
         cursor: pointer;
 
+        &.active {
+
+          .dropdown__item:not(:first-of-type) {
+            
+          }
+        }
         .dropdown__item {
             // width: 200px;
             

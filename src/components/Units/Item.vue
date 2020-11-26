@@ -38,8 +38,6 @@ export default {
         this.left = this.unit.xpos();
         this.top = this.unit.ypos();
 
-        this.mountLines();
-
         /* Set edit functionality */
         this.handleEditLogic();
     },
@@ -64,8 +62,7 @@ export default {
         },
         onDrag: function (dx,dy) {
             /* Position element in the UI level */
-            this.left += dx;
-            this.top += dy;
+            this.moveBy(dx,dy);
         },
         onDragEnd: function() {
             this.$el.dispatchEvent(new Event('unitdragend'));
@@ -81,12 +78,11 @@ export default {
                 x = this.left + elRect.width/2 - 10*this.scale;
                 y = this.top + elRect.height/2 - 10*this.scale;
                 point = new Point(x,y,this.unit.getType());
-                
+
                 /* Detach connected relations upon deletion */
                 if (line.src.unit.getType() === "Relation") {
                     if (line.src.unit.getDestId() === this.unit.getUID()) {
                         await board.addUnitOnRuntime(point);
-                        // setTimeout(()=>line.src.changeDestOnRuntime(point.getUID()),0);
                         line.src.changeDestOnRuntime(point.getUID());
                     } else {
                         board.deleteLineOnRuntime(lineId);
@@ -100,15 +96,12 @@ export default {
                         board.deleteLineOnRuntime(lineId);
                     }
                 }
-                    // board.deleteLineOnRuntime(lineId);
             }
 
             if (this.groupContainer) {
                 this.groupContainer.removeItem(this.unit.getUID())
             }
 
-            
-            console.log(board.unitList);
             board.deleteUnitOnRuntime(this.$el.ref);                
         },
         onDuplicate() {
@@ -116,22 +109,6 @@ export default {
         },
         onEdit() {
 
-        },
-        getEnumId: function() {
-            return this.unit.getEnumId();
-        },
-        setEnumId: function(enumId) {
-            this.unit.setEnumId(enumId);
-        },
-        removeLineToEnum() {
-            this.setEnumId(null)
-        },
-        mountLines() {
-            /* Mount line with Enum if exists */
-            let enumId = this.unit.getEnumId();
-            if (enumId) {
-                // this.drawLineToEnum(enumId);
-            }
         },
     },
 

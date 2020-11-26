@@ -56,7 +56,7 @@ export default {
                                 ...document.querySelectorAll('.unit-item'),
                                 ...document.querySelectorAll('.unit-relation')];
             let i = itemElements.length;
-            
+
             while (--i > -1) {
                 if (Helpers.hitTest(itemElements[i], this.$el, 1)) {
                     /* get targeted Info element */
@@ -81,7 +81,7 @@ export default {
                             return;
                         }
                         if (targetItem.unit.getType() === "Relation") {
-                            if (targetItem.unit.getDestId() === relation.unit.getUID()) {
+                            if (targetItem.unit.getSrcId() === relation.unit.getUID() || targetItem.unit.getDestId() === relation.unit.getUID()) {
                                 return;
                             }
                         } 
@@ -92,7 +92,7 @@ export default {
                             return;
                         }
                         if (targetItem.unit.getType() === "Relation") {
-                            if (targetItem.unit.getSrcId() === relation.unit.getUID()) {
+                            if (targetItem.unit.getSrcId() === relation.unit.getUID() || targetItem.unit.getDestId() === relation.unit.getUID()) {
                                 return;
                             }
                         } 

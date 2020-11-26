@@ -782,6 +782,7 @@ import { Helpers } from '../assets/js/Helpers';
         // border: 5px solid black;
         overflow: hidden;
         -webkit-overflow-scrolling: touch;
+        // cursor: move;
     }
     .lines {
         position: fixed;
@@ -809,6 +810,7 @@ import { Helpers } from '../assets/js/Helpers';
         transition: scale .2s ease-in-out;
         transition: border-color .3s ease;  
         transform-origin: 0% 0%;
+        cursor: pointer;
         z-index: 999;
 
         &.selected {

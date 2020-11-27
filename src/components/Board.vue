@@ -134,7 +134,7 @@
 import { Helpers } from '../assets/js/Helpers';
 
     function getScaleMultiplier(delta) {
-      var sign = Math.sign(delta), speed = 1;
+      var sign = Math.sign(delta), speed = 1.1;
       var deltaAdjustedSpeed = Math.min(0.25, Math.abs(speed * delta / 128));
     //   let result = 1 - sign * deltaAdjustedSpeed;
       return 1 - sign * deltaAdjustedSpeed;
@@ -510,6 +510,7 @@ import { Helpers } from '../assets/js/Helpers';
                                 if (pressedUnit.closest('.unit-type')) {
                                     self.$refs[unitId].onDragStart();
                                 }
+                                console.log(pressedUnit);
                                 contextMenu.activate(pressedUnit.ref, ev.clientX, ev.clientY);                                
                             }
                             
@@ -810,7 +811,7 @@ import { Helpers } from '../assets/js/Helpers';
         transition: scale .2s ease-in-out;
         transition: border-color .3s ease;  
         transform-origin: 0% 0%;
-        cursor: pointer;
+        // cursor: pointer;
         z-index: 999;
 
         &.selected {

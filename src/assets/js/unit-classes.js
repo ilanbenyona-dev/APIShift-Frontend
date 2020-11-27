@@ -77,10 +77,6 @@ class Relation extends Item {
         this._type = 'Relation';
     }
 
-    // getSuper() {
-    //     return super();
-    // }
-
     getSrcId() {
         return this._src;
     }

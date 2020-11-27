@@ -107,29 +107,40 @@ export default {
             var x,y,point, elRect = this.$el.getBoundingClientRect();
 
 
-
             for (const lineId of this.lines) {
                 let line = board.$refs[lineId];
-                x = this.left + elRect.width/2 - 10*this.scale;
-                y = this.top + elRect.height/2 - 10*this.scale;
+
+                x = this.left + elRect.width/2 - 5*this.scale;
+                y = this.top + elRect.height/2 - 5*this.scale;
                 point = new Point(x,y,this.unit.getType());
 
                 /* Detach connected relations upon deletion */
-                if (line.src.unit.getType() === "Relation") {
+                if (line.src.unit.getType() === "Relation" && line.src.unit.getUID() !== this.unit.getUID()) {
                     if (line.src.unit.getDestId() === this.unit.getUID()) {
                         await board.addUnitOnRuntime(point);
-                        line.src.changeDestOnRuntime(point.getUID());
+                        await line.src.changeDestOnRuntime(point.getUID());
                     } else {
-                        board.deleteLineOnRuntime(lineId);
+                        await board.deleteLineOnRuntime(lineId);
                     }
                 }
-                else if (line.dest.unit.getType() === "Relation") {
+                else if (line.dest.unit.getType() === "Relation" && line.dest.unit.getUID() !== this.unit.getUID()) {
                     if (line.dest.unit.getSrcId() === this.unit.getUID()) {
                         await board.addUnitOnRuntime(point);
-                        line.dest.changeSrcOnRuntime(point.getUID());
+                        await line.dest.changeSrcOnRuntime(point.getUID());
                     } else {
-                        board.deleteLineOnRuntime(lineId);
+                        await board.deleteLineOnRuntime(lineId);
                     }
+                }
+                else if (line.options.isInfoToEnum) {
+                    let enumUnit = line.dest;
+                    enumUnit.unit.setItemId(null);
+                }
+
+                if (line.src.unit.getUID() === this.unit.getUID()) {
+                    await board.deleteLineOnRuntime(lineId);
+                }
+                if (line.dest.unit.getUID() === this.unit.getUID()) {
+                    await board.deleteLineOnRuntime(lineId);
                 }
             }
 
@@ -169,6 +180,7 @@ export default {
         },
         setHeightAndWidth: function() {
             // if(this.containedUnits.length === 0) this.onDelete();
+            let self = this;
             let padding = 10*this.scale;
             let rightmostX = -99999, leftmostX = 99999;
             let upperboundY = 99999, lowerboundY = -99999;
@@ -176,11 +188,11 @@ export default {
 
             /* determine group element boundries */
             this.containedUnits.forEach(unit => {
-                let unitRect = unit.$el.getBoundingClientRect();
-                rightmostX = Math.max(rightmostX, unit.left + unitRect.width);
+                let unitEl = unit.$el;
+                rightmostX = Math.max(rightmostX, unit.left + unitEl.offsetWidth*self.scale);
                 leftmostX = Math.min(leftmostX, unit.left);
                 upperboundY = Math.min(upperboundY, unit.top);
-                lowerboundY = Math.max(lowerboundY, unit.top + unitRect.height);
+                lowerboundY = Math.max(lowerboundY, unit.top + unitEl.offsetHeight*self.scale);
                 minZindex = Math.min(minZindex, unit.zIndex);
             });
 

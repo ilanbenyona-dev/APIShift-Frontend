@@ -4,7 +4,7 @@
             <div class="unit-item__header__text single-line input"
             :contenteditable="editmode"
             @keydown="keydown">
-                {{unit.getUID()}}
+                {{unit.getText()}}
             </div>  
             <div class="unit-item__header__type">I</div>
         </div>
@@ -69,32 +69,43 @@ export default {
         },
         onDelete: async function () {
             let board = this.$parent;
+            var x,y,point, elRect = this.$el.getBoundingClientRect();
 
 
             for (const lineId of this.lines) {
                 let line = board.$refs[lineId];
-                var x,y,point, elRect = this.$el.getBoundingClientRect();
 
-                x = this.left + elRect.width/2 - 10*this.scale;
-                y = this.top + elRect.height/2 - 10*this.scale;
+                x = this.left + elRect.width/2 - 5*this.scale;
+                y = this.top + elRect.height/2 - 5*this.scale;
                 point = new Point(x,y,this.unit.getType());
 
                 /* Detach connected relations upon deletion */
-                if (line.src.unit.getType() === "Relation") {
+                if (line.src.unit.getType() === "Relation" && line.src.unit.getUID() !== this.unit.getUID()) {
                     if (line.src.unit.getDestId() === this.unit.getUID()) {
                         await board.addUnitOnRuntime(point);
-                        line.src.changeDestOnRuntime(point.getUID());
+                        await line.src.changeDestOnRuntime(point.getUID());
                     } else {
-                        board.deleteLineOnRuntime(lineId);
+                        await board.deleteLineOnRuntime(lineId);
                     }
                 }
-                else if (line.dest.unit.getType() === "Relation") {
+                else if (line.dest.unit.getType() === "Relation" && line.dest.unit.getUID() !== this.unit.getUID()) {
                     if (line.dest.unit.getSrcId() === this.unit.getUID()) {
                         await board.addUnitOnRuntime(point);
-                        line.dest.changeSrcOnRuntime(point.getUID());
+                        await line.dest.changeSrcOnRuntime(point.getUID());
                     } else {
-                        board.deleteLineOnRuntime(lineId);
+                        await board.deleteLineOnRuntime(lineId);
                     }
+                }
+                else if (line.options.isInfoToEnum) {
+                    let enumUnit = line.dest;
+                    enumUnit.unit.setItemId(null);
+                }
+
+                if (line.src.unit.getUID() === this.unit.getUID()) {
+                    await board.deleteLineOnRuntime(lineId);
+                }
+                if (line.dest.unit.getUID() === this.unit.getUID()) {
+                    await board.deleteLineOnRuntime(lineId);
                 }
             }
 

@@ -54,8 +54,7 @@ export default {
             this.$el.style.zIndex = this.zIndex;
 
             /* Position element in the UI level */
-            this.left += dx;
-            this.top += dy;
+            this.moveBy(dx,dy);
 
             /* If hovering over Enum element highlight Enum element */
             let enumElements = document.querySelectorAll('.unit-enum');

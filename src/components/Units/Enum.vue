@@ -5,7 +5,7 @@
         <div class="unit-enum__header">
             <div class="unit-enum__header__text single-line input"
             :contenteditable="editmode"
-            @keydown="keydown">{{unit.getUID()}}</div>   
+            @keydown="keydown">{{unit.getText()}}</div>   
             <div class="unit-enum__header__type">E</div>
         </div>
         <div class="unit-enum__items"></div>

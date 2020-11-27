@@ -3,7 +3,7 @@
         <div class="unit-relation__header">
             <div class="unit-relation__header__text single-line input"
             :contenteditable="editmode"
-            @keydown="keydown">{{unit.getUID()}}</div>                 
+            @keydown="keydown">{{unit.getText()}}</div>                 
             <div class="unit-relation__header__type">R</div>
         </div>
         <div class="connector">
@@ -134,8 +134,7 @@ export default {
                     }
                 }
                 else if (line.dest.unit.getType() === "Relation" && line.dest.unit.getUID() !== this.unit.getUID()) {
-                    if (line.dest.unit.getSrcId() === this.unit.getUID() ||
-                        line.src.unit.getDestId() === this.unit.getUID()) {
+                    if (line.dest.unit.getSrcId() === this.unit.getUID()) {
                         await board.addUnitOnRuntime(point);
                         await line.dest.changeSrcOnRuntime(point.getUID());
                     } else {
@@ -153,10 +152,13 @@ export default {
                 if (line.dest.unit.getUID() === this.unit.getUID()) {
                     await board.deleteLineOnRuntime(lineId);
                 }
-                
-                // board.deleteLineOnRuntime(lineId);
             }
 
+            if (this.groupContainer) {
+                this.groupContainer.removeItem(this.unit.getUID())
+            }
+
+            board.deleteUnitOnRuntime(this.$el.ref);                
 
         },
         async mountLines() {

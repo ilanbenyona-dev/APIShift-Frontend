@@ -1,8 +1,8 @@
 <template>
   <div class="dropdown">
       <div class="dropdown__item">
-        <div class="dropdown__item-type"></div>
-        <div class="dropdown__item-name"></div>
+        <div class="dropdown__item-type">R</div>
+        <div class="dropdown__item-name">UserPosts</div>
       </div>
       <div class="dropdown-indicator"></div>
   </div>
@@ -10,14 +10,18 @@
 
 <script>
 export default {
-
+  props: {
+    itemList: {
+      type: Array
+    }
+  }
 }
 </script>
 
 <style lang="scss" scoped>
     .dropdown {
         display: inline-block;
-        width: 120px;
+        width: 140px;
         height: 30px;
         background: white;
         border: 1px solid black;
@@ -31,7 +35,14 @@ export default {
           }
         }
         .dropdown__item {
-            // width: 200px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            line-height: 30px;
+
+            &-name {
+              margin-right: 20px;
+            }
             
         }
         .dropdown-indicator {

@@ -13,7 +13,7 @@ export default {
             "Enum": true,
             "Group": true,
             "Relation": true,
-            "Info": true
+            "Item": true
         }[this.unit.getType()];
         if (isEditableUnit ) {
             this.$el.querySelector('.input').addEventListener('blur', () => {

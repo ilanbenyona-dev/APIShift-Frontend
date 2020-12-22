@@ -57,6 +57,7 @@ class Item extends Unit {
         super( x, y, text, objectStr);
         this._type = "Item";
     }
+
 }
 
 class Relation extends Item {

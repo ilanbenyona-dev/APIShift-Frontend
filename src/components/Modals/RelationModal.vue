@@ -174,7 +174,7 @@ export default {
                 grid-column-start: 1; 
                 grid-column-end: 3;
                 grid-row-start: 1;
-                margin-left: 50px;
+                margin-left: 20px;
                 margin-right: 20px;
                 .label {
                   margin-right: 10px;

@@ -693,17 +693,15 @@ import { Helpers } from '../assets/js/Helpers';
                     let srcGroup = this.relateFrom.groupContainer;
                     let destGroup = this.relateTo.groupContainer;
 
-                    if (srcGroup === destGroup) {
 
-                        let relation = new Relation(this.relateFrom.unit.getUID(), this.relateTo.unit.getUID(), this.relateType, options);
-                        await this.addUnitOnRuntime(relation);
+                    let relation = new Relation(this.relateFrom.unit.getUID(), this.relateTo.unit.getUID(), this.relateType, options);
+                    await this.addUnitOnRuntime(relation);
 
-                        /* If related items are in a group, add relation to group */
-                        if (srcGroup && srcGroup == destGroup) {
-                            srcGroup.addItem(relation.getUID());
-                            this.$refs[relation.getUID()].groupContainer = srcGroup;
-                        }          
-                    }
+                    /* If related items are in a group, add relation to group */
+                    if (srcGroup && srcGroup == destGroup) {
+                        srcGroup.addItem(relation.getUID());
+                        this.$refs[relation.getUID()].groupContainer = srcGroup;
+                    }  
                     this.relateFrom = null;
                     this.relateTo = null;
                     this.relateType = null;

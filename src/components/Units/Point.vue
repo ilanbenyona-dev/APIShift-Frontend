@@ -56,7 +56,7 @@ export default {
                                 ...document.querySelectorAll('.unit-item'),
                                 ...document.querySelectorAll('.unit-relation')];
             let i = itemElements.length;
-
+            
             while (--i > -1) {
                 if (Helpers.hitTest(itemElements[i], this.$el, 1)) {
                     /* get targeted Info element */
@@ -70,29 +70,24 @@ export default {
                         return;
                     }
 
-
-
-                    // if (!board.$refs[itemId].unit.getType() === "Relation" && (itemId === ) {
-                    //     return;
-                    // }
                     if (line.options.isUnitToRelation) {
                         relation = line.dest;
-                        if (relation.groupContainer !== board.$refs[itemId].groupContainer) {
-                            return;
-                        }
+                        // if (relation.groupContainer !== board.$refs[itemId].groupContainer) {
+                        //     return;
+                        // }
                         if (targetItem.unit.getType() === "Relation") {
-                            if (targetItem.unit.getSrcId() === relation.unit.getUID() || targetItem.unit.getDestId() === relation.unit.getUID()) {
+                            if (targetItem.unit.getDestId() === relation.unit.getUID()) {
                                 return;
                             }
                         } 
                         await relation.changeSrcOnRuntime(itemId);
                     } if (line.options.isRelationToUnit) {
                         relation = line.src;
-                        if (relation.groupContainer !== board.$refs[itemId].groupContainer) {
-                            return;
-                        }
+                        // if (relation.groupContainer !== board.$refs[itemId].groupContainer) {
+                        //     return;
+                        // }
                         if (targetItem.unit.getType() === "Relation") {
-                            if (targetItem.unit.getSrcId() === relation.unit.getUID() || targetItem.unit.getDestId() === relation.unit.getUID()) {
+                            if (targetItem.unit.getSrcId() === relation.unit.getUID()) {
                                 return;
                             }
                         } 
